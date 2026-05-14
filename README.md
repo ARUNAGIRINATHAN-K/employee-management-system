@@ -107,7 +107,7 @@ mvn spring-boot:run
 |------|----------|----------|
 | Admin | `admin` | `Admin@123` |
 
-## 📡 API Documentation
+## API Documentation
 
 ### Swagger UI
 Available at: `http://localhost:8080/swagger-ui.html`
@@ -232,6 +232,52 @@ mvn clean package -DskipTests -Pprod
 ```bash
 java -jar target/workforcehub-1.0.0.jar
 ```
+
+## Production Readiness Checklist
+
+This section outlines the missing pieces and technical debt that must be resolved to bring the Employee Management System from its current functional baseline to a fully robust, production-ready enterprise application.
+
+### 1. High Priority (Core Business Logic)
+
+#### Backend
+- [ ] **Database Migration Management**: Transition from Hibernate `ddl-auto=create` to **Flyway** or **Liquibase**. Production databases should never rely on auto-DDL.
+- [ ] **Payroll Processing Service**: Implement `PayrollService` to calculate salaries, deductions, and generate pay slips at the end of billing cycles.
+- [ ] **Document Storage System**: Implement `FileStorageService` to handle employee document uploads (resumes, IDs, contracts). Needs configuration for local storage testing and AWS S3/Azure Blob for production.
+- [ ] **Notification & Email Service**: Add `spring-boot-starter-mail` to handle automated emails for password resets, leave approvals, and onboarding using `JavaMailSender`.
+- [ ] **Centralized Exception Handling**: Expand `@ControllerAdvice` to gracefully handle and format all SQL constraints, JWT expirations, and File Upload size limits.
+
+#### Frontend
+- [ ] **Payroll UI**: Create `payroll.html` to allow HR to trigger payroll runs and employees to view/download their payslips.
+- [ ] **Document Management UI**: Add file upload components in `employee-profile.html` to securely upload and retrieve PDFs/Images.
+- [ ] **Role & User Administration UI**: Add a `users.html` interface restricted to `ADMIN` for manually revoking access, unlocking accounts, and modifying system roles.
+
+---
+
+### 2. Medium Priority (Performance & UX Optimization)
+
+#### Backend
+- [ ] **Reporting & Export Engine**: Add **Apache POI** (Excel) and **iText/OpenPDF** (PDF) dependencies to `pom.xml`. Implement `ReportService` to export employee directories and attendance logs.
+- [ ] **Caching Implementation**: Integrate Redis or Caffeine Cache for high-read, low-write endpoints like `getAllDepartments()` and `getDashboardData()` to reduce database load.
+- [ ] **Rate Limiting Setup**: Bucket4J is in the `pom.xml`, but needs a `Filter` or `Interceptor` to actively block DDoS attempts on the `/login` and `/api/**` endpoints.
+
+#### Frontend
+- [ ] **Attendance Tracking UI**: Create `attendance.html` featuring a calendar view or a punch-in/punch-out widget connected to the existing `AttendanceController`.
+- [ ] **Client-Side Validation**: Enhance Thymeleaf forms with robust JavaScript validation (or integrate a library like Parsley.js/Vuelidate) to prevent unnecessary backend calls.
+- [ ] **Flash Messages & Toasts**: Implement a centralized system for showing success/error toast notifications after form submissions instead of raw error pages.
+
+---
+
+### 3. Low Priority (Enterprise Polish)
+
+#### Backend
+- [ ] **Actuator Security**: Secure the `/actuator` health/metrics endpoints so they are only accessible to monitoring tools (like Prometheus) or `ADMIN` roles.
+- [ ] **Automated Backup Strategy**: Implement a scheduled cron job (via `@Scheduled` or OS level) to backup the MySQL volume.
+- [ ] **Audit Logging Refinement**: Hook Hibernate Envers or custom JPA EntityListeners to automatically write `UPDATE/DELETE` history to the `AuditLog` table.
+
+#### Frontend
+- [ ] **Dark Mode Toggle**: Implement a CSS variables-based theme switcher for better accessibility.
+- [ ] **Localization (i18n)**: Externalize text strings into `messages_en.properties`, `messages_es.properties`, etc., allowing for multi-language support.
+- [ ] **Mobile Responsiveness Polish**: Perform a final pass on the Bootstrap 5 tables and navbars to ensure they render perfectly on mobile devices.
 
 ## License
 
