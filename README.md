@@ -14,275 +14,358 @@
 
 ## Overview
 
-WorkForceHub is a production-ready, enterprise-grade Employee Management System built with **Java 21**, **Spring Boot 3**, and **Bootstrap 5**. It provides comprehensive workforce management capabilities including employee CRUD, attendance tracking, leave management, payroll, and real-time analytics.
+**WorkForceHub is an enterprise employee management system.**
 
-## Features
+Use it to manage your workforce across recruitment, attendance, leave, and payroll. Built with Java 21 and Spring Boot 3 for reliability and performance.
 
-| Module | Capabilities |
-|--------|-------------|
-| **Authentication** | JWT tokens, refresh tokens, BCrypt encryption, role-based access, forgot/reset password |
-| **Employee Management** | CRUD, profile images, document uploads, department allocation, salary management |
-| **Attendance** | Daily check-in/out, work hours calculation, late detection, attendance reports |
-| **Leave Management** | Apply/approve/reject leaves, 8 leave types, leave balance tracking |
-| **Dashboard** | Real-time analytics, Chart.js visualizations, department stats, hiring trends |
-| **Payroll** | Salary components, tax calculations, payment tracking |
-| **Notifications** | In-app notifications, email notifications |
-| **Audit Trail** | Complete activity logging, change tracking |
-| **Export** | PDF reports, Excel exports |
+### What You Can Do
+- Manage employee records and department assignments
+- Track daily attendance and work hours
+- Process leave requests with approval workflows
+- Calculate and manage payroll
+- View real-time team analytics and dashboards
+- Monitor all activity through audit logs
+
+## Key Features
+
+| Feature | What It Does |
+|---------|-------------|
+| **Authentication** | Secure login with JWT tokens, role-based access control, and password recovery |
+| **Employee Management** | Add, update, and organize employees with profiles, documents, and salary details |
+| **Attendance Tracking** | Track check-in/out times and calculate work hours automatically |
+| **Leave Management** | Employees request leave, managers approve/reject, system tracks balances |
+| **Payroll** | Calculate salaries with deductions and generate pay slips |
+| **Dashboard** | View real-time charts, team statistics, and hiring trends |
+| **Notifications** | Receive in-app and email alerts for approvals and updates |
+| **Audit Logs** | Track all user actions and data changes for compliance |
+| **Export** | Generate PDF reports and Excel exports
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Language** | Java 21 |
-| **Framework** | Spring Boot 3.3.5 |
-| **Security** | Spring Security 6 + JWT |
-| **ORM** | Spring Data JPA + Hibernate |
-| **Database** | MySQL 8.0 |
-| **Frontend** | Thymeleaf + Bootstrap 5 + Chart.js |
-| **Build** | Maven |
-| **Caching** | Caffeine |
-| **API Docs** | SpringDoc OpenAPI (Swagger) |
-| **Testing** | JUnit 5 + Mockito + MockMvc |
-| **Containerization** | Docker + Docker Compose |
-| **CI/CD** | GitHub Actions |
-| **Monitoring** | Spring Boot Actuator |
+| Layer | Technology | Why |
+|-------|-----------|-----|
+| **Backend** | Java 21 + Spring Boot 3 | Modern, stable, enterprise-ready |
+| **Database** | MySQL 8.0 | Reliable relational database |
+| **Frontend** | Thymeleaf + Bootstrap 5 | Server-side templates with responsive design |
+| **Security** | Spring Security + JWT | Token-based authentication and role management |
+| **ORM** | Spring Data JPA + Hibernate | Simplified database access with automatic queries |
+| **API Docs** | SpringDoc OpenAPI (Swagger) | Auto-generated interactive API documentation |
+| **Deployment** | Docker + Docker Compose | Containerized, easy deployment anywhere |
+| **Testing** | JUnit 5 + Mockito | Comprehensive unit and integration tests |
 
-## Architecture
+## Project Structure
 
 ```
 com.workforcehub/
-├── config/          # Security, Web, OpenAPI, Audit configs
-├── controller/      # REST & Page controllers
-├── dto/             # Request/Response DTOs
-├── entity/          # JPA entities with BaseEntity
-├── enums/           # Type-safe enumerations
-├── exception/       # Global exception handling
-├── repository/      # Spring Data JPA repositories
-├── security/        # JWT provider, filter, UserDetails
-├── service/         # Business logic layer
-├── util/            # Utility classes
-└── validation/      # Custom validators
+├── config/       — Security, database, and web configuration
+├── controller/   — REST API and web page endpoints
+├── dto/          — Request and response data transfer objects
+├── entity/       — Database models and JPA entities
+├── enums/        — Type-safe enumerations (roles, statuses, etc.)
+├── exception/    — Global error handling
+├── repository/   — Database query methods
+├── security/     — JWT authentication and user details
+├── service/      — Business logic layer
+├── util/         — Helper utilities
+└── validation/   — Custom input validators
 ```
 
 ## Quick Start
 
 ### Prerequisites
-- Java 21+
-- Maven 3.9+
-- MySQL 8.0+ (or use Docker)
 
-### Option 1: Docker (Recommended)
+- Java 21 or later
+- Maven 3.9+ (or use the included Maven Wrapper)
+- MySQL 8.0+ (or Docker)
+- Docker (optional, recommended)
+
+### Option 1: Run with Docker (Recommended)
+
+**Start all services in one command:**
 
 ```bash
 cd backend
 docker-compose up -d
 ```
 
-The app will be available at `http://localhost:8080`
+Access the app at `http://localhost:8080`
 
-### Option 2: Local Development
+### Option 2: Run Locally
 
-1. **Start MySQL** and create database:
+**1. Start MySQL:**
+
 ```sql
 CREATE DATABASE workforcehub;
 ```
 
-2. **Configure** `application.yml` or set environment variables:
+**2. Configure the database connection:**
+
+Set environment variables or edit `application.yml`:
 ```bash
 export DB_HOST=localhost
 export DB_USERNAME=root
 export DB_PASSWORD=your_password
 ```
 
-3. **Build & Run**:
-```bash
-cd backend
-mvn clean install
-mvn spring-boot:run
+**3. Build and start the app:**
+
+**Windows (PowerShell):**
+```powershell
+cd "backend\workforcehub"
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-26.0.1"
+$env:Path += ";C:\Program Files\Java\jdk-26.0.1\bin"
+.\mvnw.cmd spring-boot:run
 ```
 
-### Default Credentials
-| Role | Username | Password |
-|------|----------|----------|
-| Admin | `admin` | `Admin@123` |
+**macOS / Linux:**
+```bash
+cd backend/workforcehub
+./mvnw spring-boot:run
+```
+
+**4. Log in:**
+
+Open `http://localhost:8080` and use:
+- Username: `admin`
+- Password: `Admin@123`
+
+### Maven Wrapper
+
+You don't need Maven installed globally. The project includes a Maven Wrapper that downloads and runs Maven automatically.
+
+Use `.\mvnw.cmd` (Windows) or `./mvnw` (macOS/Linux) instead of `mvn`.
 
 ## API Documentation
 
-### Swagger UI
-Available at: `http://localhost:8080/swagger-ui.html`
+### View the API
 
-### Core Endpoints
+**Interactive Swagger UI:** `http://localhost:8080/swagger-ui.html`
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| `POST` | `/api/v1/auth/login` | Login | Public |
-| `POST` | `/api/v1/auth/register` | Register | Public |
-| `POST` | `/api/v1/auth/refresh-token` | Refresh JWT | Public |
-| `POST` | `/api/v1/auth/forgot-password` | Forgot password | Public |
-| `GET` | `/api/v1/employees` | List employees | Auth |
-| `POST` | `/api/v1/employees` | Create employee | ADMIN, HR |
-| `GET` | `/api/v1/employees/{id}` | Get employee | Auth |
-| `PUT` | `/api/v1/employees/{id}` | Update employee | ADMIN, HR |
-| `DELETE` | `/api/v1/employees/{id}` | Delete employee | ADMIN |
-| `GET` | `/api/v1/departments` | List departments | Auth |
-| `POST` | `/api/v1/attendance/check-in/{id}` | Check in | Auth |
-| `POST` | `/api/v1/attendance/check-out/{id}` | Check out | Auth |
-| `GET` | `/api/v1/dashboard` | Dashboard data | Auth |
-| `POST` | `/api/v1/leave-requests/employee/{id}` | Apply leave | Auth |
+Test endpoints directly from the browser without writing code.
 
-### Standard Response Format
+### Common Endpoints
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/api/v1/auth/login` | User login |
+| POST | `/api/v1/auth/register` | Create new account |
+| POST | `/api/v1/auth/refresh-token` | Refresh JWT token |
+| GET | `/api/v1/employees` | List all employees |
+| POST | `/api/v1/employees` | Create new employee |
+| GET | `/api/v1/departments` | List departments |
+| POST | `/api/v1/attendance/check-in/{id}` | Check in for the day |
+| POST | `/api/v1/leave-requests/employee/{id}` | Request leave |
+| GET | `/api/v1/dashboard` | Get dashboard data |
+
+### Response Format
+
+All endpoints return consistent JSON:
+
 ```json
 {
   "success": true,
-  "message": "Success",
-  "data": { ... },
-  "timestamp": "2024-01-01T00:00:00"
+  "message": "Operation successful",
+  "data": { },
+  "timestamp": "2026-05-15T10:30:00"
 }
 ```
 
-## 🗄 Database Schema
+## Database
 
-### ER Diagram
+### Tables
+
+The system uses 11 core tables:
+
+- `users` — User accounts and authentication
+- `roles` — Role definitions (Admin, HR, Manager, Employee)
+- `user_roles` — Maps users to roles
+- `employees` — Employee records and details
+- `departments` — Department organization
+- `attendance` — Check-in/out records
+- `leave_requests` — Leave applications and approvals
+- `payroll` — Salary and payment records
+- `documents` — Employee file uploads
+- `audit_logs` — Activity tracking
+- `notifications` — User notifications
+
+### Relationships
 
 ```
-Users ──── user_roles ──── Roles
-  │
-  └── Employees ──── Departments
-        │  │  │
-        │  │  └── Documents
-        │  │
-        │  ├── Attendance
-        │  ├── LeaveRequests
-        │  └── Payroll
-        │
-        └── Notifications
-              AuditLogs
+Users ──── Roles ──── Employees ──── Departments
+                        │
+                        ├── Attendance
+                        ├── LeaveRequests
+                        ├── Payroll
+                        └── Documents
+                
+AuditLogs (tracks all changes)
 ```
 
-### Tables: `users`, `roles`, `user_roles`, `employees`, `departments`, `attendance`, `leave_requests`, `payroll`, `documents`, `audit_logs`, `notifications`
+## Docker Deployment
 
-## Docker
+### Quick Start
 
 ```bash
-# Build and start all services
+cd backend
 docker-compose up -d
+```
 
-# View logs
+### Common Commands
+
+```bash
+# View container logs
 docker-compose logs -f app
 
-# Stop services
+# Stop all containers
 docker-compose down
 
-# Rebuild after changes
+# Rebuild after code changes
 docker-compose up -d --build
 ```
 
+### Docker Compose Note
+
+Newer Docker versions ignore the `version:` attribute in `docker-compose.yml`. If you see a warning about an obsolete version, remove this line from the top:
+
+```yaml
+version: '3.9'  # ← Delete this line
+```
+
+The file works the same without it.
+
 ## Testing
+
+### Run Tests
 
 ```bash
 # Run all tests
 mvn test
 
-# Run with coverage report
+# Generate coverage report
 mvn test jacoco:report
 
-# Coverage report location
+# View coverage results
 open target/site/jacoco/index.html
 ```
 
-## Security Features
+Coverage reports show which code is tested and which needs more tests.
 
-- JWT access + refresh tokens
+## Security
+
+**Your data is protected by:**
+
+- JWT tokens for API authentication
 - BCrypt password hashing (strength 12)
 - Role-based access control (ADMIN, HR, MANAGER, EMPLOYEE)
-- Method-level security with `@PreAuthorize`
-- Account lockout after 5 failed attempts
-- CORS configuration
-- Rate limiting with Bucket4j
-- Input validation with Jakarta Validation
-- SQL injection prevention via parameterized queries
-- XSS protection via Thymeleaf auto-escaping
+- Account lockout after 5 failed login attempts
+- CORS protection against cross-origin attacks
+- Input validation to prevent SQL injection
+- XSS protection through template escaping
 
 ## Monitoring
 
-- **Health Check**: `GET /actuator/health`
-- **Info**: `GET /actuator/info`
-- **Metrics**: `GET /actuator/metrics`
+The app provides built-in health checks and metrics:
+
+```
+Health: GET /actuator/health
+Info:   GET /actuator/info
+Metrics: GET /actuator/metrics
+```
+
+Use these endpoints to verify the app is running and collect performance data.
 
 ## Production Deployment
 
-1. Set environment variables:
+### Set Environment Variables
+
+Configure these before deployment:
+
 ```bash
 export SPRING_PROFILES_ACTIVE=prod
-export DB_HOST=your-db-host
-export DB_USERNAME=your-db-user
-export DB_PASSWORD=your-db-password
-export JWT_SECRET=your-256-bit-secret
-export MAIL_USERNAME=your-email
+export DB_HOST=your-database-host
+export DB_USERNAME=your-database-user
+export DB_PASSWORD=your-database-password
+export JWT_SECRET=your-256-bit-secret-key
+export MAIL_HOST=smtp.gmail.com
+export MAIL_USERNAME=your-email@gmail.com
 export MAIL_PASSWORD=your-email-password
 ```
 
-2. Build production JAR:
+### Build Production JAR
+
 ```bash
 mvn clean package -DskipTests -Pprod
 ```
 
-3. Run:
+This creates an executable JAR file in `target/`.
+
+### Run the JAR
+
 ```bash
 java -jar target/workforcehub-1.0.0.jar
 ```
 
-## Production Readiness Checklist
+### Next Steps for Production
 
-This section outlines the missing pieces and technical debt that must be resolved to bring the Employee Management System from its current functional baseline to a fully robust, production-ready enterprise application.
+- Use a reverse proxy (Nginx) to manage traffic
+- Enable HTTPS with SSL certificates
+- Set up automated backups for the MySQL database
+- Configure logging to centralize logs from all instances
+- Use a process manager (systemd, supervisor) to keep the app running
 
-### 1. High Priority (Core Business Logic)
+## What's Next (Roadmap)
 
-#### Backend
-- [ ] **Database Migration Management**: Transition from Hibernate `ddl-auto=create` to **Flyway** or **Liquibase**. Production databases should never rely on auto-DDL.
-- [ ] **Payroll Processing Service**: Implement `PayrollService` to calculate salaries, deductions, and generate pay slips at the end of billing cycles.
-- [ ] **Document Storage System**: Implement `FileStorageService` to handle employee document uploads (resumes, IDs, contracts). Needs configuration for local storage testing and AWS S3/Azure Blob for production.
-- [ ] **Notification & Email Service**: Add `spring-boot-starter-mail` to handle automated emails for password resets, leave approvals, and onboarding using `JavaMailSender`.
-- [ ] **Centralized Exception Handling**: Expand `@ControllerAdvice` to gracefully handle and format all SQL constraints, JWT expirations, and File Upload size limits.
+This section identifies features and improvements for future releases.
 
-#### Frontend
-- [ ] **Payroll UI**: Create `payroll.html` to allow HR to trigger payroll runs and employees to view/download their payslips.
-- [ ] **Document Management UI**: Add file upload components in `employee-profile.html` to securely upload and retrieve PDFs/Images.
-- [ ] **Role & User Administration UI**: Add a `users.html` interface restricted to `ADMIN` for manually revoking access, unlocking accounts, and modifying system roles.
+### High Priority Features
 
----
+**Backend:**
+- Implement database migrations with Flyway or Liquibase instead of auto-DDL
+- Complete the Payroll Service to calculate and process salary payments
+- Add a Document Storage Service for employee file uploads (local or AWS S3)
+- Build an Email Service for notifications and password resets
 
-### 2. Medium Priority (Performance & UX Optimization)
+**Frontend:**
+- Create Payroll page for HR to run monthly processing
+- Add Document Management UI to the employee profile
+- Build User Administration page for admins to manage system accounts
 
-#### Backend
-- [ ] **Reporting & Export Engine**: Add **Apache POI** (Excel) and **iText/OpenPDF** (PDF) dependencies to `pom.xml`. Implement `ReportService` to export employee directories and attendance logs.
-- [ ] **Caching Implementation**: Integrate Redis or Caffeine Cache for high-read, low-write endpoints like `getAllDepartments()` and `getDashboardData()` to reduce database load.
-- [ ] **Rate Limiting Setup**: Bucket4J is in the `pom.xml`, but needs a `Filter` or `Interceptor` to actively block DDoS attempts on the `/login` and `/api/**` endpoints.
+### Medium Priority Improvements
 
-#### Frontend
-- [ ] **Attendance Tracking UI**: Create `attendance.html` featuring a calendar view or a punch-in/punch-out widget connected to the existing `AttendanceController`.
-- [ ] **Client-Side Validation**: Enhance Thymeleaf forms with robust JavaScript validation (or integrate a library like Parsley.js/Vuelidate) to prevent unnecessary backend calls.
-- [ ] **Flash Messages & Toasts**: Implement a centralized system for showing success/error toast notifications after form submissions instead of raw error pages.
+**Backend:**
+- Add PDF and Excel export capabilities with Apache POI and iText
+- Implement caching (Redis or Caffeine) for frequently accessed data
+- Activate rate limiting to prevent brute force attacks
 
----
+**Frontend:**
+- Build Calendar UI for attendance tracking
+- Add client-side form validation with JavaScript
+- Implement toast notifications for better user feedback
 
-### 3. Low Priority (Enterprise Polish)
+### Low Priority Polish
 
-#### Backend
-- [ ] **Actuator Security**: Secure the `/actuator` health/metrics endpoints so they are only accessible to monitoring tools (like Prometheus) or `ADMIN` roles.
-- [ ] **Automated Backup Strategy**: Implement a scheduled cron job (via `@Scheduled` or OS level) to backup the MySQL volume.
-- [ ] **Audit Logging Refinement**: Hook Hibernate Envers or custom JPA EntityListeners to automatically write `UPDATE/DELETE` history to the `AuditLog` table.
+**Backend:**
+- Secure the `/actuator` monitoring endpoints
+- Set up automated database backups
+- Add comprehensive audit logging with Hibernate Envers
 
-#### Frontend
-- [ ] **Dark Mode Toggle**: Implement a CSS variables-based theme switcher for better accessibility.
-- [ ] **Localization (i18n)**: Externalize text strings into `messages_en.properties`, `messages_es.properties`, etc., allowing for multi-language support.
-- [ ] **Mobile Responsiveness Polish**: Perform a final pass on the Bootstrap 5 tables and navbars to ensure they render perfectly on mobile devices.
+**Frontend:**
+- Add dark mode toggle
+- Support multiple languages (i18n)
+- Optimize mobile responsiveness
+
+## Support & Contributing
+
+Have questions or found a bug?
+
+- **Report issues** on GitHub Issues
+- **Contribute** by submitting pull requests
+- **Discuss** ideas in Discussions tab
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License — See LICENSE file for details
 
 ---
 
-<p align="center">Built with ❤️ using Spring Boot 3 and Bootstrap 5</p>
+Built with ❤️ using Spring Boot 3 and Bootstrap 5
