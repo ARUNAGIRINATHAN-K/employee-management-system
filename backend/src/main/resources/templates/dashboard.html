@@ -11,57 +11,56 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body>
-<div class="app-layout">
+<div class="d-flex min-vh-100 bg-body-tertiary">
     <!-- Sidebar Overlay -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="brand-icon">W</div>
-            <span class="brand">WorkForceHub</span>
+    <aside class="d-flex flex-column flex-shrink-0 p-3 bg-body border-end shadow-sm" style="width: 280px;" id="sidebar">
+        <div class="d-flex align-items-center pb-3 mb-3 border-bottom text-decoration-none px-2">
+            <div class="bg-primary text-white rounded d-flex align-items-center justify-content-center" style="width:32px;height:32px;font-weight:bold;">W</div>
+            <span class="fs-5 fw-bold text-body ms-2">WorkForceHub</span>
         </div>
-        <nav class="sidebar-nav">
+        <nav class="nav nav-pills flex-column mb-auto mt-3">
             <div class="nav-section">
-                <div class="nav-section-title">Main</div>
-                <a href="/dashboard" class="nav-link-custom active"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
-                <a href="/employees" class="nav-link-custom"><i class="bi bi-people-fill"></i> Employees</a>
-                <a href="/departments" class="nav-link-custom"><i class="bi bi-building"></i> Departments</a>
+                <div class="text-muted small fw-bold text-uppercase px-3 mb-2 mt-4">Main</div>
+                <a href="/dashboard" class="nav-link active mb-1"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+                <a href="/employees" class="nav-link link-body-emphasis mb-1"><i class="bi bi-people-fill"></i> Employees</a>
+                <a href="/departments" class="nav-link link-body-emphasis mb-1"><i class="bi bi-building"></i> Departments</a>
             </div>
             <div class="nav-section">
-                <div class="nav-section-title">Management</div>
-                <a href="/leaves" class="nav-link-custom"><i class="bi bi-calendar-event"></i> Leave Requests</a>
-                <a href="#" class="nav-link-custom"><i class="bi bi-clock-history"></i> Attendance</a>
-                <a href="#" class="nav-link-custom"><i class="bi bi-cash-stack"></i> Payroll</a>
+                <div class="text-muted small fw-bold text-uppercase px-3 mb-2 mt-4">Management</div>
+                <a href="/leaves" class="nav-link link-body-emphasis mb-1"><i class="bi bi-calendar-event"></i> Leave Requests</a>
+                <a href="/attendance" class="nav-link link-body-emphasis mb-1"><i class="bi bi-clock-history"></i> Attendance</a>
+                <a href="/payroll" class="nav-link link-body-emphasis mb-1"><i class="bi bi-cash-stack"></i> Payroll</a>
             </div>
             <div class="nav-section">
-                <div class="nav-section-title">System</div>
-                <a href="/swagger-ui.html" class="nav-link-custom" target="_blank"><i class="bi bi-journal-code"></i> API Docs</a>
-                <a href="#" class="nav-link-custom"><i class="bi bi-shield-lock"></i> Audit Logs</a>
-                <a href="#" class="nav-link-custom"><i class="bi bi-gear"></i> Settings</a>
+                <div class="text-muted small fw-bold text-uppercase px-3 mb-2 mt-4">System</div>
+                <a href="/swagger-ui.html" class="nav-link link-body-emphasis mb-1" target="_blank"><i class="bi bi-journal-code"></i> API Docs</a>
+                <a href="/users" class="nav-link link-body-emphasis mb-1"><i class="bi bi-shield-lock"></i> Users</a>
+                <a href="#" class="nav-link link-body-emphasis mb-1"><i class="bi bi-gear"></i> Settings</a>
             </div>
         </nav>
         <div style="padding:1rem;border-top:1px solid var(--border-color)">
-            <a href="#" onclick="WorkForceHub.logout()" class="nav-link-custom" style="color:var(--danger)">
+            <a href="#" onclick="WorkForceHub.logout()" class="nav-link link-body-emphasis mb-1" style="color:var(--danger)">
                 <i class="bi bi-box-arrow-left"></i> Logout
             </a>
         </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="main-content">
+    <main class="flex-grow-1 d-flex flex-column overflow-hidden">
         <!-- Top Header -->
-        <header class="top-header">
-            <div class="header-left">
-                <button class="menu-toggle" id="menuToggle"><i class="bi bi-list"></i></button>
-                <div class="search-box">
-                    <i class="bi bi-search"></i>
-                    <input type="text" placeholder="Search employees, departments..." id="globalSearch">
+        <header class="navbar navbar-expand-lg  bg-body border-bottom px-4 py-2 shadow-sm">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-light me-2" id="menuToggle"><i class="bi bi-list"></i></button>
+                <div class="input-group">
+                    <span class="input-group-text bg-body border-end-0"><i class="bi bi-search"></i></span><input type="text" class="form-control border-start-0"  placeholder="Search employees, departments..." id="globalSearch">
                 </div>
             </div>
-            <div class="header-right">
-                <button class="theme-toggle" id="themeToggle"><i class="bi bi-moon"></i></button>
-                <button class="notification-btn"><i class="bi bi-bell"></i><span class="notification-badge"></span></button>
+            <div class="d-flex align-items-center gap-3 ms-auto">
+                <button class="btn btn-light rounded-circle" id="themeToggle"><i class="bi bi-moon"></i></button>
+                <button class="btn btn-light rounded-circle position-relative"><i class="bi bi-bell"></i><span class="notification-badge"></span></button>
                 <div class="user-menu dropdown">
                     <div data-bs-toggle="dropdown" aria-expanded="false">
                         <div class="user-avatar" th:text="${username != null ? username.substring(0,1).toUpperCase() : 'A'}">A</div>
@@ -77,82 +76,78 @@
         </header>
 
         <!-- Page Content -->
-        <div class="page-content">
-            <div class="page-header animate-fade-in">
+        <div class="container-fluid p-4 overflow-auto">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom animate-fade-in">
                 <div>
                     <h2>Dashboard</h2>
-                    <span class="breadcrumb">Welcome back, <span th:text="${username}">Admin</span> 👋</span>
+                    <span class="text-muted small">Welcome back, <span th:text="${username}">Admin</span> 👋</span>
                 </div>
                 <div style="display:flex;gap:0.5rem">
-                    <a href="/employees/add" class="btn-primary-custom"><i class="bi bi-plus-lg"></i> Add Employee</a>
+                    <a href="/employees/add" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Employee</a>
                 </div>
             </div>
 
             <!-- Stats Cards -->
             <div class="row g-3 mb-4">
                 <div class="col-xl-2 col-lg-4 col-md-6 col-6 animate-slide-up" style="animation-delay:0.05s">
-                    <div class="stat-card primary">
-                        <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
-                        <div class="stat-value" th:text="${dashboard.totalEmployees}">0</div>
-                        <div class="stat-label">Total Employees</div>
+                    <div class="card shadow-sm border-0 text-center p-4 h-100 stat-card primary">
+                        <div class="display-6 mb-3 text-primary"><i class="bi bi-people-fill"></i></div>
+                        <div class="h2 fw-bold mb-1" th:text="${dashboard.totalEmployees}">0</div>
+                        <div class="text-muted small text-uppercase fw-bold">Total Employees</div>
                     </div>
                 </div>
                 <div class="col-xl-2 col-lg-4 col-md-6 col-6 animate-slide-up" style="animation-delay:0.1s">
-                    <div class="stat-card success">
-                        <div class="stat-icon"><i class="bi bi-person-check-fill"></i></div>
-                        <div class="stat-value" th:text="${dashboard.activeEmployees}">0</div>
-                        <div class="stat-label">Active Employees</div>
+                    <div class="card shadow-sm border-0 text-center p-4 h-100 stat-card success">
+                        <div class="display-6 mb-3 text-primary"><i class="bi bi-person-check-fill"></i></div>
+                        <div class="h2 fw-bold mb-1" th:text="${dashboard.activeEmployees}">0</div>
+                        <div class="text-muted small text-uppercase fw-bold">Active Employees</div>
                     </div>
                 </div>
                 <div class="col-xl-2 col-lg-4 col-md-6 col-6 animate-slide-up" style="animation-delay:0.15s">
-                    <div class="stat-card info">
-                        <div class="stat-icon"><i class="bi bi-clock-fill"></i></div>
-                        <div class="stat-value" th:text="${dashboard.presentToday}">0</div>
-                        <div class="stat-label">Present Today</div>
+                    <div class="card shadow-sm border-0 text-center p-4 h-100 stat-card info">
+                        <div class="display-6 mb-3 text-primary"><i class="bi bi-clock-fill"></i></div>
+                        <div class="h2 fw-bold mb-1" th:text="${dashboard.presentToday}">0</div>
+                        <div class="text-muted small text-uppercase fw-bold">Present Today</div>
                     </div>
                 </div>
                 <div class="col-xl-2 col-lg-4 col-md-6 col-6 animate-slide-up" style="animation-delay:0.2s">
-                    <div class="stat-card danger">
-                        <div class="stat-icon"><i class="bi bi-person-x-fill"></i></div>
-                        <div class="stat-value" th:text="${dashboard.absentToday}">0</div>
-                        <div class="stat-label">Absent Today</div>
+                    <div class="card shadow-sm border-0 text-center p-4 h-100 stat-card danger">
+                        <div class="display-6 mb-3 text-primary"><i class="bi bi-person-x-fill"></i></div>
+                        <div class="h2 fw-bold mb-1" th:text="${dashboard.absentToday}">0</div>
+                        <div class="text-muted small text-uppercase fw-bold">Absent Today</div>
                     </div>
                 </div>
                 <div class="col-xl-2 col-lg-4 col-md-6 col-6 animate-slide-up" style="animation-delay:0.25s">
-                    <div class="stat-card warning">
-                        <div class="stat-icon"><i class="bi bi-calendar-event-fill"></i></div>
-                        <div class="stat-value" th:text="${dashboard.pendingLeaveRequests}">0</div>
-                        <div class="stat-label">Pending Leaves</div>
+                    <div class="card shadow-sm border-0 text-center p-4 h-100 stat-card warning">
+                        <div class="display-6 mb-3 text-primary"><i class="bi bi-calendar-event-fill"></i></div>
+                        <div class="h2 fw-bold mb-1" th:text="${dashboard.pendingLeaveRequests}">0</div>
+                        <div class="text-muted small text-uppercase fw-bold">Pending Leaves</div>
                     </div>
                 </div>
                 <div class="col-xl-2 col-lg-4 col-md-6 col-6 animate-slide-up" style="animation-delay:0.3s">
-                    <div class="stat-card accent">
-                        <div class="stat-icon" style="background:rgba(6,182,212,0.1);color:var(--accent)"><i class="bi bi-building"></i></div>
-                        <div class="stat-value" th:text="${dashboard.totalDepartments}">0</div>
-                        <div class="stat-label">Departments</div>
+                    <div class="card shadow-sm border-0 text-center p-4 h-100 stat-card accent">
+                        <div class="display-6 mb-3 text-primary" style="background:rgba(6,182,212,0.1);color:var(--accent)"><i class="bi bi-building"></i></div>
+                        <div class="h2 fw-bold mb-1" th:text="${dashboard.totalDepartments}">0</div>
+                        <div class="text-muted small text-uppercase fw-bold">Departments</div>
                     </div>
                 </div>
             </div>
 
             <!-- Charts Row -->
             <div class="row g-3 mb-4">
-                <div class="col-lg-8 animate-slide-up" style="animation-delay:0.35s">
-                    <div class="card-custom">
-                        <div class="card-header-custom">
-                            <h5><i class="bi bi-graph-up me-2"></i>Attendance Trend (Last 7 Days)</h5>
-                        </div>
-                        <div class="card-body-custom">
-                            <div class="chart-container"><canvas id="attendanceChart"></canvas></div>
+                <div class="col-md-8 animate-slide-up" style="animation-delay:0.35s">
+                    <div class="card shadow-sm border-0 h-100 d-flex flex-column">
+                        
+                        <div class="card-body d-flex flex-column">
+                            <div class="chart-container flex-grow-1 position-relative" style="min-height: 300px;"><canvas id="attendanceChart"></canvas></div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-4 animate-slide-up" style="animation-delay:0.4s">
-                    <div class="card-custom">
-                        <div class="card-header-custom">
-                            <h5><i class="bi bi-pie-chart me-2"></i>Department Distribution</h5>
-                        </div>
-                        <div class="card-body-custom">
-                            <div class="chart-container"><canvas id="deptChart"></canvas></div>
+                <div class="col-md-4 animate-slide-up" style="animation-delay:0.4s">
+                    <div class="card shadow-sm border-0 h-100 d-flex flex-column">
+                        
+                        <div class="card-body d-flex flex-column">
+                            <div class="chart-container flex-grow-1 position-relative" style="min-height: 300px;"><canvas id="deptChart"></canvas></div>
                         </div>
                     </div>
                 </div>
@@ -161,11 +156,9 @@
             <!-- Monthly Hiring -->
             <div class="row g-3">
                 <div class="col-12 animate-slide-up" style="animation-delay:0.45s">
-                    <div class="card-custom">
-                        <div class="card-header-custom">
-                            <h5><i class="bi bi-bar-chart me-2"></i>Monthly Hiring Analytics</h5>
-                        </div>
-                        <div class="card-body-custom">
+                    <div class="card shadow-sm border-0">
+                        
+                        <div class="card-body">
                             <div class="chart-container"><canvas id="hiringChart"></canvas></div>
                         </div>
                     </div>
@@ -229,5 +222,17 @@
             scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } } }
     });
 </script>
+
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', () => {
+        /*<![CDATA[*/
+        var successMsg = /*[[${successMessage}]]*/ null;
+        var errorMsg = /*[[${errorMessage}]]*/ null;
+        if (successMsg) setTimeout(() => WorkForceHub.showToast(successMsg, 'success'), 500);
+        if (errorMsg) setTimeout(() => WorkForceHub.showToast(errorMsg, 'error'), 500);
+        /*]]>*/
+    });
+</script>
 </body>
+
 </html>

@@ -9,36 +9,36 @@
     <link href="/css/style.css" rel="stylesheet">
 </head>
 <body>
-<div class="auth-page">
-    <div class="auth-card" style="max-width:500px">
-        <div class="logo">
-            <h1><i class="bi bi-grid-3x3-gap-fill"></i> WorkForceHub</h1>
-            <p>Create your account</p>
+<div class="d-flex align-items-center justify-content-center bg-body-tertiary min-vh-100">
+    <div class="card shadow-sm p-4 w-100 mx-auto" style="max-width: 450px;" style="max-width:500px">
+        <div class="text-center mb-4">
+            <h1 class="text-primary fs-3 fw-bold"><i class="bi bi-grid-3x3-gap-fill"></i> WorkForceHub</h1>
+            <p class="text-muted small">Create your account</p>
         </div>
-        <form id="registerForm" onsubmit="handleRegister(event)">
+        <form id="registerForm" onsubmit="handleRegister(event)" class="needs-validation" novalidate>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-                <div class="form-group">
+                <div class="mb-3">
                     <label for="firstName">First Name</label>
-                    <input type="text" id="firstName" class="form-control-custom" placeholder="John" required>
-                </div>
-                <div class="form-group">
+                    <input type="text" id="firstName" class="form-control" placeholder="John" required>
+                <div class="invalid-feedback">This field is required.</div></div>
+                <div class="mb-3">
                     <label for="lastName">Last Name</label>
-                    <input type="text" id="lastName" class="form-control-custom" placeholder="Doe" required>
-                </div>
+                    <input type="text" id="lastName" class="form-control" placeholder="Doe" required>
+                <div class="invalid-feedback">This field is required.</div></div>
             </div>
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="username">Username</label>
-                <input type="text" id="username" class="form-control-custom" placeholder="johndoe" required minlength="3">
-            </div>
-            <div class="form-group">
+                <input type="text" id="username" class="form-control" placeholder="johndoe" required minlength="3" required>
+            <div class="invalid-feedback">This field is required.</div></div>
+            <div class="mb-3">
                 <label for="email">Email</label>
-                <input type="email" id="email" class="form-control-custom" placeholder="john@example.com" required>
-            </div>
-            <div class="form-group">
+                <input type="email" id="email" class="form-control" placeholder="john@example.com" required>
+            <div class="invalid-feedback">This field is required.</div></div>
+            <div class="mb-3">
                 <label for="regPassword">Password</label>
-                <input type="password" id="regPassword" class="form-control-custom" placeholder="Min 8 characters" required minlength="8">
-            </div>
-            <button type="submit" class="btn-primary-custom" style="width:100%;justify-content:center;padding:0.75rem">Create Account</button>
+                <input type="password" id="regPassword" class="form-control" placeholder="Min 8 characters" required minlength="8" required>
+            <div class="invalid-feedback">This field is required.</div></div>
+            <button type="submit" class="btn btn-primary w-100">Create Account</button>
             <p style="text-align:center;margin-top:1.25rem;font-size:0.875rem;color:var(--text-secondary)">
                 Already have an account? <a href="/login" style="font-weight:600">Sign In</a>
             </p>
@@ -59,5 +59,17 @@ function handleRegister(e) {
     });
 }
 </script>
+
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', () => {
+        /*<![CDATA[*/
+        var successMsg = /*[[${successMessage}]]*/ null;
+        var errorMsg = /*[[${errorMessage}]]*/ null;
+        if (successMsg) setTimeout(() => WorkForceHub.showToast(successMsg, 'success'), 500);
+        if (errorMsg) setTimeout(() => WorkForceHub.showToast(errorMsg, 'error'), 500);
+        /*]]>*/
+    });
+</script>
 </body>
+
 </html>

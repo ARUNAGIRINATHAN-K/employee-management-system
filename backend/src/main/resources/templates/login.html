@@ -10,36 +10,36 @@
     <link href="/css/style.css" rel="stylesheet">
 </head>
 <body>
-<div class="auth-page">
-    <div class="auth-card">
-        <div class="logo">
-            <h1><i class="bi bi-grid-3x3-gap-fill"></i> WorkForceHub</h1>
-            <p>Enterprise Employee Management System</p>
+<div class="d-flex align-items-center justify-content-center bg-body-tertiary min-vh-100">
+    <div class="card shadow-sm p-4 w-100 mx-auto" style="max-width: 450px;">
+        <div class="text-center mb-4">
+            <h1 class="text-primary fs-3 fw-bold"><i class="bi bi-grid-3x3-gap-fill"></i> WorkForceHub</h1>
+            <p class="text-muted small">Enterprise Employee Management System</p>
         </div>
 
-        <form id="loginForm" onsubmit="handleLogin(event)">
-            <div class="form-group">
+        <form id="loginForm" onsubmit="handleLogin(event)" class="needs-validation" novalidate>
+            <div class="mb-3">
                 <label for="usernameOrEmail">Username or Email</label>
-                <input type="text" id="usernameOrEmail" class="form-control-custom" placeholder="Enter your username or email" required>
-            </div>
-            <div class="form-group">
+                <input type="text" id="usernameOrEmail" class="form-control" placeholder="Enter your username or email" required>
+            <div class="invalid-feedback">This field is required.</div></div>
+            <div class="mb-3">
                 <label for="password">Password</label>
-                <div style="position:relative">
-                    <input type="password" id="password" class="form-control-custom" placeholder="Enter your password" required>
-                    <button type="button" onclick="togglePassword()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer">
+                <div class="input-group">
+                    <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword()">
                         <i class="bi bi-eye" id="togglePwdIcon"></i>
                     </button>
                 </div>
             </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
-                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.875rem;color:var(--text-secondary);cursor:pointer">
-                    <input type="checkbox" style="accent-color:var(--primary)"> Remember me
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <label class="form-check-label">
+                    <input type="checkbox" class="form-check-input me-2"> Remember me
                 </label>
                 <a href="/forgot-password" style="font-size:0.875rem;font-weight:500">Forgot Password?</a>
             </div>
 
-            <button type="submit" class="btn-primary-custom" style="width:100%;justify-content:center;padding:0.75rem" id="loginBtn">
+            <button type="submit" class="btn btn-primary w-100" id="loginBtn">
                 <span id="loginBtnText">Sign In</span>
                 <span id="loginSpinner" style="display:none"><i class="bi bi-arrow-repeat" style="animation:spin 1s linear infinite"></i></span>
             </button>
@@ -49,7 +49,7 @@
             </p>
         </form>
 
-        <div style="margin-top:1.5rem;padding:1rem;background:var(--bg-secondary);border-radius:var(--border-radius-sm);font-size:0.8125rem">
+        <div class="mt-4 p-3 bg-body rounded text-center small border">
             <strong style="color:var(--text-primary)">Demo Credentials:</strong><br>
             <span style="color:var(--text-secondary)">Username: <code>admin</code> | Password: <code>Admin@123</code></span>
         </div>
@@ -84,5 +84,17 @@
         else { input.type = 'password'; icon.className = 'bi bi-eye'; }
     }
 </script>
+
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', () => {
+        /*<![CDATA[*/
+        var successMsg = /*[[${successMessage}]]*/ null;
+        var errorMsg = /*[[${errorMessage}]]*/ null;
+        if (successMsg) setTimeout(() => WorkForceHub.showToast(successMsg, 'success'), 500);
+        if (errorMsg) setTimeout(() => WorkForceHub.showToast(errorMsg, 'error'), 500);
+        /*]]>*/
+    });
+</script>
 </body>
+
 </html>

@@ -2,11 +2,10 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leave Requests | WorkForceHub</title>
+    <title>User Administration | WorkForceHub</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
-    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 </head>
 <body>
 <div class="d-flex min-vh-100 bg-body-tertiary">
@@ -22,7 +21,7 @@
             </div>
             <div class="nav-section">
                 <div class="text-muted small fw-bold text-uppercase px-3 mb-2 mt-4">Management</div>
-                <a href="/leaves" class="nav-link active mb-1"><i class="bi bi-calendar-event"></i> Leave Requests</a>
+                <a href="/leaves" class="nav-link link-body-emphasis mb-1"><i class="bi bi-calendar-event"></i> Leave Requests</a>
                 <a href="/attendance" class="nav-link link-body-emphasis mb-1"><i class="bi bi-clock-history"></i> Attendance</a>
                 <a href="/payroll" class="nav-link link-body-emphasis mb-1"><i class="bi bi-cash-stack"></i> Payroll</a>
             </div>
@@ -30,35 +29,47 @@
                 <div class="text-muted small fw-bold text-uppercase px-3 mb-2 mt-4">System</div>
                 <a href="/swagger-ui.html" class="nav-link link-body-emphasis mb-1" target="_blank"><i class="bi bi-journal-code"></i> API Docs</a>
                 <a href="/users" class="nav-link link-body-emphasis mb-1"><i class="bi bi-shield-lock"></i> Users</a>
-                <a href="#" class="nav-link link-body-emphasis mb-1"><i class="bi bi-gear"></i> Settings</a>
+                <a href="#" class="nav-link active mb-1"><i class="bi bi-gear"></i> Settings</a>
             </div>
         </nav>
     </aside>
     <main class="flex-grow-1 d-flex flex-column overflow-hidden">
         <header class="navbar navbar-expand-lg  bg-body border-bottom px-4 py-2 shadow-sm">
-            <div class="d-flex align-items-center gap-3"><button class="btn btn-light me-2" id="menuToggle"><i class="bi bi-list"></i></button><h6 style="margin:0;font-weight:600">Leave Requests</h6></div>
+            <div class="d-flex align-items-center gap-3"><button class="btn btn-light me-2" id="menuToggle"><i class="bi bi-list"></i></button><h6 style="margin:0;font-weight:600">User Administration</h6></div>
             <div class="d-flex align-items-center gap-3 ms-auto"><button class="btn btn-light rounded-circle" id="themeToggle"><i class="bi bi-moon"></i></button></div>
         </header>
         <div class="container-fluid p-4 overflow-auto">
-            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom animate-fade-in"><div><h2>Leave Requests</h2><span class="text-muted small">Manage employee leave applications</span></div></div>
-            <div class="card-custom animate-slide-up">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom animate-fade-in">
+                <div>
+                    <h2>User Administration</h2>
+                    <span class="text-muted small">Manage system access and roles</span>
+                </div>
+            </div>
+            
+            
+            <div class="card shadow-sm border-0 mb-4 animate-slide-up">
                 
-                <div style="overflow-x:auto">
-                    <div class="table-responsive"><table class="table table-hover align-middle">
-                        <thead><tr><th>Employee</th><th>Leave Type</th><th>Start</th><th>End</th><th>Days</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
+                <div class="card-body">
+                    <div class="table-responsive"><table class="table table-hover align-middle" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
                         <tbody>
-                            <tr th:each="leave : ${pendingLeaves}">
-                                <td th:text="${leave.employee.fullName}">Name</td>
-                                <td><span class="badge pending" th:text="${leave.leaveType}">CASUAL</span></td>
-                                <td th:text="${leave.startDate}">2024-01-01</td>
-                                <td th:text="${leave.endDate}">2024-01-05</td>
-                                <td th:text="${leave.totalDays}">5</td>
-                                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" th:text="${leave.reason}">Reason</td>
-                                <td><span class="badge pending">Pending</span></td>
+                            <tr>
+                                <td>Admin User</td>
+                                <td>admin</td>
+                                <td><span class="badge bg-danger">ADMIN</span></td>
+                                <td><span class="badge bg-success">Active</span></td>
                                 <td>
-                                    <div style="display:flex;gap:0.25rem">
-                                        <button class="btn btn-sm btn-light border" style="color:var(--success)" title="Approve"><i class="bi bi-check-lg"></i></button>
-                                        <button class="btn btn-sm btn-outline-danger" title="Reject"><i class="bi bi-x-lg"></i></button>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-light border" title="Edit Role"><i class="bi bi-pencil"></i></button>
+                                        <button class="btn btn-sm btn-light border text-danger" title="Revoke Access"><i class="bi bi-ban"></i></button>
                                     </div>
                                 </td>
                             </tr>
@@ -66,30 +77,12 @@
                     </table></div>
                 </div>
             </div>
+
         </div>
     </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/app.js"></script>
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<script>
-    $(document).ready(function() {
-        $('.table-hover').DataTable({
-            "language": {
-                "search": "",
-                "searchPlaceholder": "Search records..."
-            },
-            "pageLength": 10,
-            "ordering": true,
-            "info": true
-        });
-        // Style the search input to match bootstrap
-        $('.dataTables_filter input').addClass('form-control form-control-sm');
-        $('.dataTables_length select').addClass('form-select form-select-sm');
-    });
-</script>
 
 <script th:inline="javascript">
     document.addEventListener('DOMContentLoaded', () => {
