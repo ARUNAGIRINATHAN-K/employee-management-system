@@ -21,8 +21,8 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: testpassword
           MYSQL_DATABASE: workforcehub_test
-        ports:
-          - 3306:3306
+        # do not bind MySQL to the host port on the runner; services are reachable
+        # from the job via localhost without exposing host ports
         options: >-
           --health-cmd="mysqladmin ping -h localhost -u root -ptestpassword"
           --health-interval=10s
@@ -44,6 +44,18 @@ jobs:
         working-directory: ./backend
         run: mvn clean compile -B
 
+      - name: Wait for MySQL
+        run: |
+          echo "Waiting for MySQL to be ready..."
+          for i in {1..30}; do
+            if timeout 1 bash -c 'cat < /dev/tcp/127.0.0.1/3306' >/dev/null 2>&1; then
+              echo "MySQL is listening"
+              break
+            fi
+            echo "Waiting... ($i)"
+            sleep 2
+          done
+
       - name: Run Tests
         working-directory: ./backend
         env:
@@ -52,13 +64,12 @@ jobs:
           DB_NAME: workforcehub_test
           DB_USERNAME: root
           DB_PASSWORD: testpassword
-          SPRING_PROFILES_ACTIVE: test
-        run: mvn test -B
+        run: mvn test -Dspring.profiles.active=test -B
 
       - name: Generate Test Report
         if: always()
         working-directory: ./backend
-        run: mvn jacoco:report -B
+        run: mvn jacoco:report -Dspring.profiles.active=test -B
 
       - name: Upload Test Results
         if: always()
