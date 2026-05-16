@@ -21,4 +21,6 @@ public interface PayrollRepository extends JpaRepository<Payroll, Long> {
 
     @Query("SELECT p.employee.department.name, SUM(p.netSalary) FROM Payroll p WHERE p.deleted = false GROUP BY p.employee.department.name")
     List<Object[]> getSalaryDistributionByDepartment();
+
+    java.util.Optional<Payroll> findFirstByEmployeeIdAndDeletedFalseOrderByPayPeriodEndDesc(Long employeeId);
 }

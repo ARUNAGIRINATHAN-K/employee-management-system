@@ -20,11 +20,12 @@
             <div class="nav-section">
                 <div class="text-muted small fw-bold text-uppercase px-3 mb-2 mt-4">Main</div>
                 <a href="/dashboard" class="nav-link active mb-1"><i class="bi bi-grid-1x2-fill"></i> My Dashboard</a>
-                <a href="/departments" class="nav-link link-body-emphasis mb-1"><i class="bi bi-building"></i> Departments</a>
             </div>
             <div class="nav-section">
                 <div class="text-muted small fw-bold text-uppercase px-3 mb-2 mt-4">My Actions</div>
+                <a href="/attendance/my-records" class="nav-link link-body-emphasis mb-1"><i class="bi bi-clock-history"></i> My Attendance</a>
                 <a href="/leaves" class="nav-link link-body-emphasis mb-1"><i class="bi bi-calendar-event"></i> My Leaves</a>
+                <a href="/payslips" class="nav-link link-body-emphasis mb-1"><i class="bi bi-cash-stack"></i> My Payslips</a>
             </div>
         </nav>
         <div style="padding:1rem;border-top:1px solid var(--border-color)">
@@ -71,6 +72,43 @@
                     <span th:if="${todayAttendance != null && todayAttendance.checkOutTime != null}" class="badge bg-success p-2 fs-6">
                         <i class="bi bi-check-circle me-1"></i> Shift Completed
                     </span>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4" th:if="${employee != null}">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white border-0 shadow-sm animate-fade-in" style="border-radius:1rem">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div><p class="mb-1 text-white-50">Days Present</p><h3 class="fw-bold mb-0" th:text="${daysPresent}">0</h3></div>
+                                <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px"><i class="bi bi-calendar-check fs-4"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-warning text-dark border-0 shadow-sm animate-fade-in" style="animation-delay:0.1s; border-radius:1rem">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div><p class="mb-1 text-dark-50">Pending Leaves</p><h3 class="fw-bold mb-0" th:text="${pendingLeavesCount}">0</h3></div>
+                                <div class="bg-dark bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px"><i class="bi bi-hourglass-split fs-4"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white border-0 shadow-sm animate-fade-in" style="animation-delay:0.2s; border-radius:1rem">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="mb-1 text-white-50">Latest Payslip</p>
+                                    <h3 class="fw-bold mb-0" th:if="${latestPayslip != null}" th:text="${'$' + latestPayslip.netSalary}">$0</h3>
+                                    <h5 class="fw-bold mb-0 mt-1" th:if="${latestPayslip == null}">No Payslips</h5>
+                                </div>
+                                <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px"><i class="bi bi-cash fs-4"></i></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

@@ -19,6 +19,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import com.workforcehub.entity.User;
+import com.workforcehub.entity.Employee;
+import com.workforcehub.entity.Payroll;
+import com.workforcehub.entity.Attendance;
+import com.workforcehub.entity.LeaveRequest;
 
 import io.swagger.v3.oas.annotations.Hidden;
 
@@ -34,6 +43,7 @@ public class PageController {
     private final UserRepository userRepository;
     private final AttendanceRepository attendanceRepository;
     private final com.workforcehub.repository.EmployeeRepository employeeRepository;
+    private final com.workforcehub.repository.LeaveRequestRepository leaveRequestRepository;
 
     @GetMapping("/login")
     public String loginPage() { return "login"; }
@@ -53,14 +63,17 @@ public class PageController {
             boolean isStandardEmployee = user.getAuthorities().stream()
                     .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_HR") || a.getAuthority().equals("ROLE_MANAGER"));
             if (isStandardEmployee) {
-                com.workforcehub.entity.User u = userRepository.findByUsername(user.getUsername()).orElse(null);
+                User u = userRepository.findByUsername(user.getUsername()).orElse(null);
                 if (u != null) {
-                    com.workforcehub.entity.Employee emp = employeeRepository.findByUserId(u.getId()).orElse(null);
+                    Employee emp = employeeRepository.findByUserId(u.getId()).orElse(null);
                     if (emp != null) {
                         model.addAttribute("employee", employeeService.getEmployeeById(emp.getId()));
                         model.addAttribute("attendanceRecords", attendanceRepository.findByEmployeeId(emp.getId(), PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "attendanceDate"))).getContent());
                         model.addAttribute("leaveRequests", leaveService.getLeavesByEmployee(emp.getId(), PageRequest.of(0, 5)).getContent());
                         model.addAttribute("todayAttendance", attendanceRepository.findTodayAttendance(emp.getId()).orElse(null));
+                        model.addAttribute("daysPresent", attendanceRepository.countPresentByEmployee(emp.getId()));
+                        model.addAttribute("pendingLeavesCount", leaveRequestRepository.countPendingByEmployee(emp.getId()));
+                        model.addAttribute("latestPayslip", payrollRepository.findFirstByEmployeeIdAndDeletedFalseOrderByPayPeriodEndDesc(emp.getId()).orElse(null));
                     }
                 }
                 model.addAttribute("username", user.getUsername());
@@ -110,9 +123,52 @@ public class PageController {
     }
 
     @GetMapping("/leaves")
-    public String leaves(Model model) {
-        model.addAttribute("pendingLeaves", leaveService.getPendingRequests());
+    public String leaves(Model model, @AuthenticationPrincipal UserDetails user) {
+        if (user != null && user.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_HR") || a.getAuthority().equals("ROLE_MANAGER"))) {
+            User u = userRepository.findByUsername(user.getUsername()).orElse(null);
+            if (u != null) {
+                Employee emp = employeeRepository.findByUserId(u.getId()).orElse(null);
+                if (emp != null) {
+                    model.addAttribute("myLeaves", leaveService.getLeavesByEmployee(emp.getId(), PageRequest.of(0, 100)).getContent());
+                    model.addAttribute("employeeId", emp.getId());
+                } else {
+                    model.addAttribute("myLeaves", Collections.emptyList());
+                }
+            }
+        } else {
+            model.addAttribute("pendingLeaves", leaveService.getPendingRequests());
+        }
         return "leaves";
+    }
+
+    @GetMapping("/attendance/my-records")
+    public String myAttendance(Model model, @AuthenticationPrincipal UserDetails user) {
+        if (user == null) return "redirect:/login";
+        User u = userRepository.findByUsername(user.getUsername()).orElse(null);
+        if (u != null) {
+            Employee emp = employeeRepository.findByUserId(u.getId()).orElse(null);
+            if (emp != null) {
+                model.addAttribute("attendanceRecords", attendanceRepository.findByEmployeeId(emp.getId(), PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, "attendanceDate"))).getContent());
+            } else {
+                model.addAttribute("attendanceRecords", Collections.emptyList());
+            }
+        }
+        return "employee-attendance";
+    }
+
+    @GetMapping("/payslips")
+    public String myPayslips(Model model, @AuthenticationPrincipal UserDetails user) {
+        if (user == null) return "redirect:/login";
+        User u = userRepository.findByUsername(user.getUsername()).orElse(null);
+        if (u != null) {
+            Employee emp = employeeRepository.findByUserId(u.getId()).orElse(null);
+            if (emp != null) {
+                model.addAttribute("payslips", payrollRepository.findByEmployeeId(emp.getId(), PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, "payPeriodEnd"))).getContent());
+            } else {
+                model.addAttribute("payslips", Collections.emptyList());
+            }
+        }
+        return "employee-payslips";
     }
 
     @GetMapping("/payroll")

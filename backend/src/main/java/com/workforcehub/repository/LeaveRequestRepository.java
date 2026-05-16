@@ -29,4 +29,7 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long
 
     @Query("SELECT lr.leaveType, SUM(lr.totalDays) FROM LeaveRequest lr WHERE lr.status = 'APPROVED' AND lr.deleted = false GROUP BY lr.leaveType")
     List<Object[]> getLeaveDistribution();
+
+    @Query("SELECT COUNT(lr) FROM LeaveRequest lr WHERE lr.employee.id = :employeeId AND lr.status = 'PENDING' AND lr.deleted = false")
+    long countPendingByEmployee(@Param("employeeId") Long employeeId);
 }
