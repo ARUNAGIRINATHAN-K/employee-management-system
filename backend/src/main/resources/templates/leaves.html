@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leave Requests | WorkForceHub</title>
@@ -23,16 +23,21 @@
             <div class="nav-section">
                 <div class="text-muted small fw-bold text-uppercase px-3 mb-2 mt-4">Management</div>
                 <a href="/leaves" class="nav-link active mb-1"><i class="bi bi-calendar-event"></i> Leave Requests</a>
-                <a href="/attendance" class="nav-link link-body-emphasis mb-1"><i class="bi bi-clock-history"></i> Attendance</a>
-                <a href="/payroll" class="nav-link link-body-emphasis mb-1"><i class="bi bi-cash-stack"></i> Payroll</a>
+                <a href="/attendance" class="nav-link link-body-emphasis mb-1" sec:authorize="hasAnyRole('ADMIN', 'HR')"><i class="bi bi-clock-history"></i> Attendance</a>
+                <a href="/payroll" class="nav-link link-body-emphasis mb-1" sec:authorize="hasAnyRole('ADMIN', 'HR')"><i class="bi bi-cash-stack"></i> Payroll</a>
             </div>
-            <div class="nav-section">
+            <div class="nav-section" sec:authorize="hasAnyRole('ADMIN', 'HR')">
                 <div class="text-muted small fw-bold text-uppercase px-3 mb-2 mt-4">System</div>
                 <a href="/swagger-ui.html" class="nav-link link-body-emphasis mb-1" target="_blank"><i class="bi bi-journal-code"></i> API Docs</a>
                 <a href="/users" class="nav-link link-body-emphasis mb-1"><i class="bi bi-shield-lock"></i> Users</a>
                 <a href="#" class="nav-link link-body-emphasis mb-1"><i class="bi bi-gear"></i> Settings</a>
             </div>
         </nav>
+        <div style="padding:1rem;border-top:1px solid var(--border-color)">
+            <a href="#" onclick="WorkForceHub.logout()" class="nav-link link-body-emphasis mb-1" style="color:var(--danger)">
+                <i class="bi bi-box-arrow-left"></i> Logout
+            </a>
+        </div>
     </aside>
     <main class="flex-grow-1 d-flex flex-column overflow-hidden">
         <header class="navbar navbar-expand-lg  bg-body border-bottom px-4 py-2 shadow-sm">
