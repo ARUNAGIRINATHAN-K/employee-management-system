@@ -9,27 +9,11 @@ spring:
       mode: always
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: create-drop
     database-platform: org.hibernate.dialect.H2Dialect
     show-sql: true
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
   thymeleaf:
     cache: false
-  mail:
-    host: localhost
-    port: 3025
-    username: test
-    password: test
-    properties:
-      mail:
-        smtp:
-          auth: false
-          starttls:
-            enable: false
-  cache:
-    type: none
 
 jwt:
   secret: d2f8c3b4e5a6f7890123456789abcdef0123456789abcdef0123456789abcdef
