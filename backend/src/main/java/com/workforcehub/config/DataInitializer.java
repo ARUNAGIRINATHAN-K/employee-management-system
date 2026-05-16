@@ -39,6 +39,7 @@ public class DataInitializer implements CommandLineRunner {
         initRoles();
         initDepartments();
         initAdminUser();
+        initEmployeeUser();
         log.info("✅ Data initialization completed successfully");
     }
 
@@ -114,6 +115,43 @@ public class DataInitializer implements CommandLineRunner {
             employeeRepository.save(adminEmployee);
 
             log.info("✅ Admin user created - username: admin, password: Admin@123");
+        }
+    }
+
+    private void initEmployeeUser() {
+        if (!userRepository.existsByUsername("employee")) {
+            Role empRole = roleRepository.findByName(RoleType.ROLE_EMPLOYEE)
+                    .orElseThrow(() -> new RuntimeException("Employee role not found"));
+
+            User empUser = User.builder()
+                    .username("employee")
+                    .email("employee@workforcehub.com")
+                    .password(passwordEncoder.encode("Employee@123"))
+                    .enabled(true)
+                    .emailVerified(true)
+                    .roles(Set.of(empRole))
+                    .build();
+            userRepository.save(empUser);
+
+            Department mktDept = departmentRepository.findByCode("MKT").orElse(null);
+
+            Employee standardEmployee = Employee.builder()
+                    .employeeId("EMP002")
+                    .firstName("Jane")
+                    .lastName("Doe")
+                    .email("employee@workforcehub.com")
+                    .phone("+1987654321")
+                    .gender(Gender.FEMALE)
+                    .designation("Marketing Specialist")
+                    .joiningDate(LocalDate.now().minusMonths(6))
+                    .status(EmployeeStatus.ACTIVE)
+                    .salary(new BigDecimal("60000.00"))
+                    .department(mktDept)
+                    .user(empUser)
+                    .build();
+            employeeRepository.save(standardEmployee);
+
+            log.info("✅ Employee user created - username: employee, password: Employee@123");
         }
     }
 }
