@@ -111,32 +111,6 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr th:each="emp : ${employees.content}">
-                                <td>
-                                    <div style="display:flex;align-items:center;gap:0.75rem">
-                                        <div class="employee-avatar-placeholder" th:text="${emp.firstName.substring(0,1) + emp.lastName.substring(0,1)}">JD</div>
-                                        <div>
-                                            <div style="font-weight:600" th:text="${emp.fullName}">John Doe</div>
-                                            <div style="font-size:0.75rem;color:var(--text-muted)" th:text="${emp.email}">john@email.com</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td><code th:text="${emp.employeeId}">EMP001</code></td>
-                                <td th:text="${emp.departmentName}">Engineering</td>
-                                <td th:text="${emp.designation}">Developer</td>
-                                <td>
-                                    <span class="badge" th:classappend="${emp.status.name() == 'ACTIVE' ? 'active' : (emp.status.name() == 'ON_LEAVE' ? 'on-leave' : 'inactive')}"
-                                          th:text="${emp.status}">Active</span>
-                                </td>
-                                <td th:text="${emp.joiningDate}">2024-01-01</td>
-                                <td>
-                                    <div style="display:flex;gap:0.25rem">
-                                        <a th:href="@{'/employees/' + ${emp.id}}" class="btn btn-sm btn-light border" data-bs-toggle="tooltip" title="View"><i class="bi bi-eye"></i></a>
-                                        <a th:href="@{'/employees/' + ${emp.id} + '/edit'}" class="btn btn-sm btn-light border" data-bs-toggle="tooltip" title="Edit"><i class="bi bi-pencil"></i></a>
-                                        <button class="btn btn-sm btn-outline-danger" th:onclick="'WorkForceHub.deleteEmployee(' + ${emp.id} + ')'" data-bs-toggle="tooltip" title="Delete"><i class="bi bi-trash"></i></button>
-                                    </div>
-                                </td>
-                            </tr>
                         </tbody>
                     </table></div>
                 </div>
@@ -155,15 +129,89 @@
     var dt;
     $(document).ready(function() {
         dt = $('.table-hover').DataTable({
+            "serverSide": true,
+            "processing": true,
             "language": {
                 "search": "",
                 "searchPlaceholder": "Search records..."
             },
             "pageLength": 10,
             "ordering": true,
-            "info": true
+            "info": true,
+            "ajax": function(data, callback, settings) {
+                var page = Math.floor(data.start / data.length);
+                var size = data.length;
+                var search = data.search.value;
+                var sortBy = 'id';
+                var sortDir = 'asc';
+                if (data.order && data.order.length > 0) {
+                    var colIndex = data.order[0].column;
+                    var fields = ['firstName', 'employeeId', 'departmentName', 'designation', 'status', 'joiningDate', 'id'];
+                    sortBy = fields[colIndex];
+                    sortDir = data.order[0].dir;
+                }
+                var url = '/employees?page=' + page + '&size=' + size + '&sortBy=' + sortBy + '&sortDir=' + sortDir;
+                if (search) url += '&search=' + encodeURIComponent(search);
+                
+                WorkForceHub.apiCall(url).then(function(resp) {
+                    if (resp && resp.success) {
+                        callback({
+                            draw: data.draw,
+                            recordsTotal: resp.data.totalElements,
+                            recordsFiltered: resp.data.totalElements,
+                            data: resp.data.content
+                        });
+                    } else {
+                        callback({ draw: data.draw, recordsTotal: 0, recordsFiltered: 0, data: [] });
+                    }
+                }).catch(function() {
+                    callback({ draw: data.draw, recordsTotal: 0, recordsFiltered: 0, data: [] });
+                });
+            },
+            "columns": [
+                { 
+                    "data": "fullName",
+                    "render": function(data, type, row) {
+                        var initial = (row.firstName && row.lastName) ? (row.firstName.charAt(0) + row.lastName.charAt(0)) : 'JD';
+                        return '<div style="display:flex;align-items:center;gap:0.75rem">' +
+                               '<div class="employee-avatar-placeholder">' + initial + '</div>' +
+                               '<div><div style="font-weight:600">' + (row.fullName || 'Unknown') + '</div>' +
+                               '<div style="font-size:0.75rem;color:var(--text-muted)">' + (row.email || '') + '</div></div></div>';
+                    }
+                },
+                { 
+                    "data": "employeeId",
+                    "render": function(data) { return '<code>' + data + '</code>'; }
+                },
+                { "data": "departmentName", "defaultContent": "N/A" },
+                { "data": "designation", "defaultContent": "N/A" },
+                { 
+                    "data": "status",
+                    "render": function(data) {
+                        var cls = data === 'ACTIVE' ? 'active' : (data === 'ON_LEAVE' ? 'on-leave' : 'inactive');
+                        return '<span class="badge ' + cls + '">' + data + '</span>';
+                    }
+                },
+                { "data": "joiningDate", "defaultContent": "" },
+                {
+                    "data": "id",
+                    "orderable": false,
+                    "render": function(data) {
+                        return '<div style="display:flex;gap:0.25rem">' +
+                               '<a href="/employees/' + data + '" class="btn btn-sm btn-light border" data-bs-toggle="tooltip" title="View"><i class="bi bi-eye"></i></a>' +
+                               '<a href="/employees/' + data + '/edit" class="btn btn-sm btn-light border" data-bs-toggle="tooltip" title="Edit"><i class="bi bi-pencil"></i></a>' +
+                               '<button class="btn btn-sm btn-outline-danger" onclick="WorkForceHub.deleteEmployee(' + data + ')" data-bs-toggle="tooltip" title="Delete"><i class="bi bi-trash"></i></button>' +
+                               '</div>';
+                    }
+                }
+            ],
+            "drawCallback": function() {
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+            }
         });
-        // Style the search input to match bootstrap
         $('.dataTables_filter input').addClass('form-control form-control-sm');
         $('.dataTables_length select').addClass('form-select form-select-sm');
     });
@@ -173,11 +221,11 @@
         var status = document.getElementById('filterStatus');
         var deptText = dept.options[dept.selectedIndex].text;
         var statusVal = status.value;
-
-        // Column 2 = Department, Column 4 = Status
-        dt.column(2).search(dept.value ? deptText : '', false, false);
-        dt.column(4).search(statusVal, false, false);
-        dt.draw();
+        var searchStr = '';
+        if (dept.value) searchStr += deptText + ' ';
+        if (statusVal) searchStr += statusVal;
+        
+        dt.search(searchStr.trim()).draw();
     }
 </script>
 
