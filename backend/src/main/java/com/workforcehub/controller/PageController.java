@@ -33,6 +33,7 @@ public class PageController {
     private final PayrollRepository payrollRepository;
     private final UserRepository userRepository;
     private final AttendanceRepository attendanceRepository;
+    private final com.workforcehub.repository.EmployeeRepository employeeRepository;
 
     @GetMapping("/login")
     public String loginPage() { return "login"; }
@@ -48,6 +49,25 @@ public class PageController {
 
     @GetMapping({"/", "/dashboard"})
     public String dashboard(Model model, @AuthenticationPrincipal UserDetails user) {
+        if (user != null) {
+            boolean isStandardEmployee = user.getAuthorities().stream()
+                    .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_HR") || a.getAuthority().equals("ROLE_MANAGER"));
+            if (isStandardEmployee) {
+                com.workforcehub.entity.User u = userRepository.findByUsername(user.getUsername()).orElse(null);
+                if (u != null) {
+                    com.workforcehub.entity.Employee emp = employeeRepository.findByUserId(u.getId()).orElse(null);
+                    if (emp != null) {
+                        model.addAttribute("employee", employeeService.getEmployeeById(emp.getId()));
+                        model.addAttribute("attendanceRecords", attendanceRepository.findByEmployeeId(emp.getId(), PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "attendanceDate"))).getContent());
+                        model.addAttribute("leaveRequests", leaveService.getLeavesByEmployee(emp.getId(), PageRequest.of(0, 5)).getContent());
+                        model.addAttribute("todayAttendance", attendanceRepository.findTodayAttendance(emp.getId()).orElse(null));
+                    }
+                }
+                model.addAttribute("username", user.getUsername());
+                return "employee-dashboard";
+            }
+        }
+        
         model.addAttribute("dashboard", dashboardService.getDashboardData());
         model.addAttribute("username", user != null ? user.getUsername() : "Guest");
         return "dashboard";

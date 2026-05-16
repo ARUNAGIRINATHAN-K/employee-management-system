@@ -50,18 +50,20 @@
                 
                 <div style="overflow-x:auto">
                     <div class="table-responsive"><table class="table table-hover align-middle">
-                        <thead><tr><th>Employee</th><th>Leave Type</th><th>Start</th><th>End</th><th>Days</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
+                        <thead><tr><th>Employee</th><th>Leave Type</th><th>Start</th><th>End</th><th>Days</th><th>Reason</th><th>Status</th><th sec:authorize="hasAnyRole('ADMIN', 'HR', 'MANAGER')">Actions</th></tr></thead>
                         <tbody>
-                            <tr th:each="leave : ${pendingLeaves}">
+                            <tr th:each="leave : ${pendingLeaves != null ? pendingLeaves : myLeaves}">
                                 <td th:text="${leave.employee.fullName}">Name</td>
                                 <td><span class="badge pending" th:text="${leave.leaveType}">CASUAL</span></td>
                                 <td th:text="${leave.startDate}">2024-01-01</td>
                                 <td th:text="${leave.endDate}">2024-01-05</td>
                                 <td th:text="${leave.totalDays}">5</td>
                                 <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" th:text="${leave.reason}">Reason</td>
-                                <td><span class="badge pending">Pending</span></td>
                                 <td>
-                                    <div style="display:flex;gap:0.25rem">
+                                    <span class="badge" th:classappend="${leave.status.name() == 'APPROVED' ? 'bg-success' : (leave.status.name() == 'REJECTED' ? 'bg-danger' : 'bg-warning text-dark')}" th:text="${leave.status}">Pending</span>
+                                </td>
+                                <td sec:authorize="hasAnyRole('ADMIN', 'HR', 'MANAGER')">
+                                    <div style="display:flex;gap:0.25rem" th:if="${leave.status.name() == 'PENDING'}">
                                         <button class="btn btn-sm btn-light border" style="color:var(--success)" title="Approve"
                                                 th:onclick="'WorkForceHub.approveLeave(' + ${leave.id} + ')'"><i class="bi bi-check-lg"></i></button>
                                         <button class="btn btn-sm btn-outline-danger" title="Reject"
