@@ -12,8 +12,13 @@ spring:
   # JPA / Hibernate
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
+
+  # Flyway
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
