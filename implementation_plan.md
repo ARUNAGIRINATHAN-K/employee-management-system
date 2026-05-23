@@ -1,6 +1,6 @@
 # Implementation Plan - Employee Management System (EMS)
 
-Build a full-featured, secure, and premium Employee Management System using **Spring Boot 3 (Java 17)**, **MySQL**, and a responsive **HTML5 + CSS3 + Vanilla JavaScript** frontend.
+Build a full-featured, secure, and premium Employee Management System using **Spring Boot 3 (Java 17/26)**, **MySQL**, and a responsive **HTML5 + CSS3 + Vanilla JavaScript** frontend.
 
 ---
 
@@ -8,10 +8,9 @@ Build a full-featured, secure, and premium Employee Management System using **Sp
 
 > [!IMPORTANT]
 > **Database Environment:** We verified that XAMPP's MySQL server is installed on your machine under `C:\xampp\mysql`. We successfully started it on port `3306` and created the `ems_db` database. The backend will connect to `jdbc:mysql://localhost:3306/ems_db` using username `root` and an empty password.
-> Let us know if you want to use a different database configuration.
 
 > [!TIP]
-> **Aesthetic and UX Choices:** We will implement a responsive single-page-app (SPA) feel using Vanilla JS for seamless view switching without full page reloads. The styling will feature:
+> **Aesthetic and UX Choices:** We will implement a responsive single-page-app (SPA) feel using Vanilla JS for seamless view switching without full page reloads. The styling features:
 > - Sleek Dark/Light theme toggle (stored in LocalStorage)
 > - Glassmorphism UI components (translucent cards, backdrop filters)
 > - Curated harmonious colors (Deep Royal Navy, Violet accents, emerald success, rose error)
@@ -25,7 +24,7 @@ Build a full-featured, secure, and premium Employee Management System using **Sp
 ```
 a:\My project\employee-management-system\
 ├── src/main/java/com/ems/
-│   ├── config/             # Spring Security, Web MVC and SSE configs
+│   ├── config/             # Spring Security, Web MVC and DataSeeder
 │   ├── controller/         # REST API endpoints for all modules
 │   ├── dto/                # Request/Response payloads (DTOs)
 │   ├── entity/             # JPA Entities mapping to MySQL tables
@@ -62,6 +61,8 @@ erDiagram
     employees ||--o{ performance_reviews : "gets"
     employees ||--o{ performance_reviews : "reviewed_by"
     audit_logs }o--|| users : "action_by"
+    employees ||--o{ profile_change_requests : "requests"
+    employees ||--o{ expense_claims : "claims"
     
     users {
         bigint id PK
@@ -83,6 +84,9 @@ erDiagram
         varchar photo_path
         bigint department_id FK
         bigint manager_id FK "self-reference"
+        bigint shift_id FK
+        double allowance_rate
+        double deduction_rate
     }
 
     departments {
@@ -90,6 +94,21 @@ erDiagram
         varchar name UK
         varchar description
         bigint manager_id FK
+    }
+
+    shifts {
+        bigint id PK
+        varchar name UK
+        time start_time
+        time end_time
+        int grace_period_minutes
+    }
+
+    leave_policies {
+        bigint id PK
+        varchar leave_type UK "CASUAL, SICK, EARNED"
+        double annual_allocation
+        double monthly_accrual_rate
     }
 
     leaves {
@@ -102,6 +121,13 @@ erDiagram
         varchar status "PENDING, APPROVED, REJECTED"
         bigint approved_by FK
         varchar comments
+    }
+
+    leave_balances {
+        bigint id PK
+        bigint employee_id FK
+        varchar leave_type "CASUAL, SICK, EARNED"
+        double balance
     }
 
     attendance {
@@ -124,6 +150,29 @@ erDiagram
         double net_salary
         varchar status "PENDING, PAID"
         date processed_date
+    }
+
+    expense_claims {
+        bigint id PK
+        bigint employee_id FK
+        varchar title
+        double amount
+        varchar category "TRAVEL, MEALS, EQUIPMENT, OTHER"
+        varchar status "PENDING, APPROVED, REJECTED, PAID"
+        date claim_date
+        bigint approved_by FK
+        varchar comments
+    }
+
+    profile_change_requests {
+        bigint id PK
+        bigint employee_id FK
+        varchar requested_fields_json
+        varchar status "PENDING, APPROVED, REJECTED"
+        datetime submitted_at
+        bigint processed_by FK
+        datetime processed_at
+        varchar comments
     }
 
     performance_reviews {
@@ -153,80 +202,68 @@ erDiagram
 ### 1. Build Backend Setup
 #### [MODIFY] [pom.xml](file:///a:/My%20project/employee-management-system/pom.xml)
 - Lower Spring Boot version to standard **3.3.4** (or latest stable Boot 3).
-- Add dependencies:
-  - `spring-boot-starter-data-jpa`
-  - `spring-boot-starter-security`
-  - `spring-boot-starter-validation`
-  - `mysql-connector-j`
-  - `lombok` (boilerplate reduction)
-  - `io.jsonwebtoken:jjwt-api:0.11.5`, `jjwt-impl:0.11.5`, `jjwt-jackson:0.11.5` (JWT auth)
-  - `org.apache.poi:poi-ooxml:5.2.5` (Excel Export)
-  - `com.github.librepdf:openpdf:1.3.30` (PDF Export)
+- Add dependencies for Security, JPA, Validation, MySQL Connector, JWT, OpenPDF, and Apache POI.
+- Do not use Lombok due to JDK 26 compiler warnings.
 
 #### [MODIFY] [application.properties](file:///a:/My%20project/employee-management-system/src/main/resources/application.properties)
 - Configure MySQL Connection details, JPA settings (`hibernate.ddl-auto=update`), multipart upload limits (5MB).
 
 ### 2. Entities & Repositories
-- Implement JPA Entities for all tables: `User`, `Employee`, `Department`, `Leave`, `Attendance`, `Payroll`, `PerformanceReview`, `AuditLog`.
-- Create corresponding Repository interfaces extending `JpaRepository`. Add custom query methods (e.g. search by name/email/department, check active statuses, etc.).
+- Implement JPA Entities for all tables: `User`, `Employee`, `Department`, `Shift`, `Leave`, `LeaveBalance`, `LeavePolicy`, `ExpenseClaim`, `ProfileChangeRequest`, `Payroll`, `PerformanceReview`, `AuditLog`.
+- Create corresponding Repository interfaces extending `JpaRepository`. Add custom query methods.
 
 ### 3. JWT Security & Auth
 - Implement password encryption (`BCryptPasswordEncoder`).
 - Custom `UserDetailsService` to fetch user credentials.
 - `JwtUtils` to generate and parse JSON Web Tokens.
 - `JwtAuthenticationFilter` to validate tokens in incoming requests.
-- `SecurityConfig` to configure stateless API session management and RBAC rules (e.g. `/api/employees/**` requires HR/MANAGER role).
+- `SecurityConfig` to configure stateless API session management and RBAC rules.
 
 ### 4. Core Services & Controllers
-- **AuthService / AuthController**: Login, Logout (invalidate token/session client-side), Forgot password (generate reset link/code).
-- **EmployeeService / EmployeeController**: CRUD operations. Implement soft delete by updating status to `DELETED`. Handle photo uploading to `uploads/` directory. Expose export endpoints.
+- **AuthService / AuthController**: Login, Forgot password, Reset password.
+- **EmployeeService / EmployeeController**: CRUD operations. soft delete by updating status to `DELETED`. Handle photo uploading.
 - **DepartmentService / DepartmentController**: CRUD, employee assignments, and lists.
-- **LeaveService / LeaveController**: Application, balance tracking, and approval workflow.
-- **AttendanceService / AttendanceController**: Daily check-in/out, late/early flags, and reporting.
-- **PayrollService / PayrollController**: Generate payslips, allowances/deductions, process monthly runs.
-- **PerformanceService / PerformanceController**: Add KPI tracking, review ratings, promotion flags.
-- **DashboardService / DashboardController**: Compile statistics (employee counts, attendance, leaves, payroll sum) to feed UI charts.
-- **AuditLogService / Aspect**: Log actions like employee deletion, salary changes, leave approvals.
+- **LeaveService / LeaveController**: Application, balance tracking, and approval workflow. Integrate dynamic leave policy engine.
+- **ShiftService / ShiftController**: Manage work shifts and assign them to employees.
+- **AttendanceService / AttendanceController**: Daily check-in/out, late/early flags checked against shift hours and grace periods.
+- **PayrollService / PayrollController**: Generate payslips, allowances/deductions (dynamic rates), and integrate approved expense claims as PAID allowances.
+- **ExpenseClaimService / ExpenseClaimController**: Submit claims, managers/HR review, and payroll integration.
+- **ProfileChangeRequestService / ProfileChangeRequestController**: Employee profile self-service edit request and HR comparison approval workflow.
+- **DashboardService / DashboardController**: Compile statistics.
+- **AuditLogService / Aspect**: Log administrative and database operations.
 
 ### 5. Frontend & UI
 #### [NEW] [index.html](file:///a:/My%20project/employee-management-system/src/main/resources/static/index.html)
-- Clean, gorgeous glassmorphic login screen. Contains options for Login, Forgot Password, and Reset Password. Responsive layout and modern font styling.
+- Clean, gorgeous glassmorphic login screen (Login, Forgot Password, Reset Password).
 
 #### [NEW] [dashboard.html](file:///a:/My%20project/employee-management-system/src/main/resources/static/dashboard.html)
 - Main portal. Features:
-  - Sleek sidebar navigation showing modules according to logged-in user role (HR sees all, Employee sees restricted options).
+  - Sidebar navigation customized by role (HR sees all, Employee sees personal views).
   - Dark Mode Toggle.
-  - Notification panel with real-time notifications via SSE (Server-Sent Events) from the backend.
-  - Main panel displaying:
-    - **Dashboard Summary**: Total employees card, Pending leaves card, Attendance rate card, Monthly payroll totals.
-    - Charts (using Chart.js): Department employee distribution (Pie), Monthly Leave Trends (Line), Payroll totals (Bar).
-    - **Employee Directory**: Datatable with pagination, sorting, search filters (by name, email, department, position), add/edit modal, delete button, upload-photo button, export Excel/PDF.
-    - **Department Manager**: List, add, edit departments, and assign employees.
-    - **Leave Manager**: View leave history, apply form, HR/Manager approval table.
-    - **Attendance Tracker**: Visual check-in/out buttons, calendar log of presence.
-    - **Payroll Center**: List payslips, generate button, pay-period filter, PDF payslip download.
-    - **Performance Hub**: Review cards, KPI tracker, rating bars.
+  - **Dashboard Summary**: Total employees, Pending leaves, Attendance rate, Monthly payroll totals.
+  - Charts (Pie for departments, Line for leaves, Bar for payroll).
+  - **Employee Directory**: CRUD directories, shifts, custom rate controls, export Excel/PDF.
+  - **My Profile**: View own profile, submit self-service edit requests, track requested updates.
+  - **Change Requests**: Comparison panel for HR Admins to approve name/phone updates.
+  - **Expenses**: Submit claim modal (Employee) and Pending Expense Approvals queue (Manager/HR).
+  - **Leave Manager**: Apply form, history, and Leave Policies Configuration (HR only).
+  - **Attendance Tracker**: Visual check-in/out buttons based on shift grace rules.
+  - **Payroll Center**: payslips and download PDF payslip with integrated claim details.
 
 #### [NEW] [style.css](file:///a:/My%20project/employee-management-system/src/main/resources/static/css/style.css)
-- Premium UI styling:
-  - Curated HSL colors (`--primary: 260 85% 60%` - Violet, `--bg-dark: 220 15% 10%`, etc.).
-  - Smooth animation keyframes for fade-in, slide-in, and card hovers.
-  - Sidebar transitions and glass container styling.
+- Premium glassmorphism styling, curated HSL variable variables, dark/light themes, hover states.
 
-#### [NEW] [api.js](file:///a:/My%20project/employee-management-system/src/main/resources/static/js/api.js) & [auth.js](file:///a:/My%20project/employee-management-system/src/main/resources/static/js/auth.js) & [app.js](file:///a:/My%20project/employee-management-system/src/main/resources/static/js/app.js)
-- Modules to handle API requests, token lifecycle, routing (conditional rendering of DOM sections based on hash `#employees`, `#payroll`), and initial data fetches.
+#### [NEW] [api.js] & [auth.js] & [app.js]
+- Central REST integration, routing navigation, data mapping, and event registrations.
 
 ---
 
 ## Verification Plan
 
 ### Automated Tests
-- Run `.\mvnw.cmd test` to execute basic unit tests for authentication logic and DB interactions.
-- Validate response structures and status codes (e.g. unauthorized requests should return 401/403).
+- Run `.\mvnw.cmd test` to execute unit/integration tests for authentication logic and DB interactions.
 
 ### Manual Verification
-1. Open the app in the browser at `http://localhost:8080`.
-2. Login with default credentials (HR, Manager, Employee).
-3. Test dark mode, photo uploads, Excel/PDF exports, and check-in/check-out.
-4. Perform leave approval flow and confirm balance reduction.
-5. Review generated payroll records.
+1. Login as employee, submit a profile edit request. Login as admin, approve it, and verify the directory update.
+2. Login as HR, edit leave policy accrual, accrue leaves manually, and verify the updated balances.
+3. Login as employee, submit an expense claim. Approve as manager, generate payroll as HR, and confirm the claim is reimbursed in payroll and marked PAID.
