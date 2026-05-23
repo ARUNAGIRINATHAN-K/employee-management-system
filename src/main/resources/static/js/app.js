@@ -61,7 +61,7 @@ function applyRolePermissions() {
     const role = currentUser.role;
     if (role === 'ROLE_EMPLOYEE') {
         // Employees see limited sidebar items
-        const hrOnly = ['navDashboard'];
+        const hrOnly = ['navDashboard', 'navChangeRequests'];
         hrOnly.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = 'none';
@@ -71,11 +71,31 @@ function applyRolePermissions() {
         document.getElementById('exportPdfBtn').style.display = 'none';
         document.getElementById('generatePayrollBtn').style.display = 'none';
         document.getElementById('addReviewBtn').style.display = 'none';
-        // Navigate to employees by default
-        navigateTo('employees');
+        // Navigate to profile by default
+        navigateTo('profile');
     }
     if (role === 'ROLE_MANAGER') {
         document.getElementById('generatePayrollBtn').style.display = 'none';
+        const hrOnly = ['navChangeRequests'];
+        hrOnly.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+        const managerExpensesCard = document.getElementById('managerExpensesCard');
+        if (managerExpensesCard) managerExpensesCard.style.display = 'block';
+    }
+    if (role === 'ROLE_HR') {
+        const accrueBtn = document.getElementById('accrueLeavesBtn');
+        if (accrueBtn) accrueBtn.style.display = 'inline-flex';
+
+        const leavePoliciesCard = document.getElementById('leavePoliciesCard');
+        if (leavePoliciesCard) leavePoliciesCard.style.display = 'block';
+
+        const manageShiftsBtn = document.getElementById('manageShiftsBtn');
+        if (manageShiftsBtn) manageShiftsBtn.style.display = 'inline-flex';
+
+        const managerExpensesCard = document.getElementById('managerExpensesCard');
+        if (managerExpensesCard) managerExpensesCard.style.display = 'block';
     }
 }
 
@@ -108,7 +128,8 @@ function navigateTo(section) {
     const titles = {
         dashboard: 'Dashboard', employees: 'Employee Directory', departments: 'Departments',
         leaves: 'Leave Management', attendance: 'Attendance', payroll: 'Payroll Center',
-        performance: 'Performance Reviews'
+        performance: 'Performance Reviews', profile: 'My Profile',
+        changeRequests: 'Profile Change Requests', expenses: 'Expense Claims'
     };
     document.getElementById('pageTitle').textContent = titles[section] || section;
 
@@ -116,7 +137,8 @@ function navigateTo(section) {
     const loaders = {
         dashboard: loadDashboard, employees: loadEmployees, departments: loadDepartments,
         leaves: loadLeaves, attendance: loadAttendance, payroll: loadPayroll,
-        performance: loadPerformance
+        performance: loadPerformance, profile: loadProfile,
+        changeRequests: loadChangeRequests, expenses: loadExpenses
     };
     if (loaders[section]) loaders[section]();
 
@@ -186,6 +208,44 @@ function setupEventListeners() {
     // Performance
     document.getElementById('addReviewBtn').addEventListener('click', () => openPerfModal());
     document.getElementById('submitPerfBtn').addEventListener('click', submitPerformanceReview);
+
+    // Leave Accrual
+    const accrueBtn = document.getElementById('accrueLeavesBtn');
+    if (accrueBtn) {
+        accrueBtn.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to trigger manual leave accrual for all active employees?')) return;
+            try {
+                const res = await API.accrueLeaves();
+                if (res && res.ok) {
+                    showToast('Leave accrual completed successfully!', 'success');
+                    loadLeaves();
+                } else {
+                    const err = await res.json();
+                    showToast(err.message || 'Accrual failed', 'error');
+                }
+            } catch (e) {
+                showToast('Network error', 'error');
+            }
+        });
+    }
+
+    // Profile Change Requests
+    document.getElementById('editProfileBtn').addEventListener('click', openProfileRequestModal);
+    document.getElementById('submitProfileRequestBtn').addEventListener('click', submitProfileRequest);
+
+    // Expenses
+    document.getElementById('submitExpenseClaimBtn').addEventListener('click', () => {
+        document.getElementById('expenseForm').reset();
+        openModal('expenseClaimModal');
+    });
+    document.getElementById('submitExpenseFormBtn').addEventListener('click', submitExpenseForm);
+
+    // Shifts
+    document.getElementById('manageShiftsBtn').addEventListener('click', openShiftManagementModal);
+    document.getElementById('saveNewShiftBtn').addEventListener('click', saveNewShift);
+
+    // Leave Policy
+    document.getElementById('saveLeavePolicyBtn').addEventListener('click', saveLeavePolicy);
 }
 
 // =============================================
@@ -387,6 +447,13 @@ function openEmployeeModal(emp = null) {
     // Load departments into dropdown
     loadDepartmentDropdown('empDepartment', emp ? (emp.department ? emp.department.id : '') : '');
 
+    // Set custom payroll rates
+    document.getElementById('empAllowanceRate').value = emp && emp.allowanceRate != null ? (emp.allowanceRate * 100).toFixed(1) : '12.0';
+    document.getElementById('empDeductionRate').value = emp && emp.deductionRate != null ? (emp.deductionRate * 100).toFixed(1) : '8.0';
+
+    // Load shifts
+    loadShiftDropdown('empShift', emp ? (emp.shift ? emp.shift.id : '') : '');
+
     // Disable email editing on update
     document.getElementById('empEmail').readOnly = !!emp;
 
@@ -404,8 +471,20 @@ async function loadDepartmentDropdown(selectId, selectedId) {
     } catch (e) { console.error(e); }
 }
 
+async function loadShiftDropdown(selectId, selectedId) {
+    try {
+        const res = await API.getShifts();
+        if (!res || !res.ok) return;
+        const shifts = await res.json();
+        const select = document.getElementById(selectId);
+        select.innerHTML = '<option value="">-- Select --</option>' +
+            shifts.map(s => `<option value="${s.id}" ${s.id == selectedId ? 'selected' : ''}>${s.name} (${s.startTime.substring(0, 5)} - ${s.endTime.substring(0, 5)})</option>`).join('');
+    } catch (e) { console.error(e); }
+}
+
 async function saveEmployee() {
     const id = document.getElementById('empId').value;
+    const shiftId = document.getElementById('empShift').value;
     const data = {
         firstName: document.getElementById('empFirstName').value,
         lastName: document.getElementById('empLastName').value,
@@ -414,7 +493,10 @@ async function saveEmployee() {
         jobTitle: document.getElementById('empJobTitle').value,
         salary: parseFloat(document.getElementById('empSalary').value) || 0,
         hireDate: document.getElementById('empHireDate').value || null,
-        department: document.getElementById('empDepartment').value ? { id: parseInt(document.getElementById('empDepartment').value) } : null
+        department: document.getElementById('empDepartment').value ? { id: parseInt(document.getElementById('empDepartment').value) } : null,
+        shift: shiftId ? { id: parseInt(shiftId) } : null,
+        allowanceRate: parseFloat(document.getElementById('empAllowanceRate').value) / 100.0,
+        deductionRate: parseFloat(document.getElementById('empDeductionRate').value) / 100.0
     };
 
     try {
@@ -601,6 +683,10 @@ async function deleteDept(id) {
 // =============================================
 async function loadLeaves() {
     const empId = currentUser.employeeId;
+
+    if (currentUser.role === 'ROLE_HR') {
+        loadLeavePolicies();
+    }
 
     // Load balances
     if (empId) {
@@ -1046,3 +1132,478 @@ function showToast(message, type = 'info') {
     container.appendChild(toast);
     setTimeout(() => { if (toast.parentElement) toast.remove(); }, 5000);
 }
+
+// =============================================
+//  PROFILE & SELF-SERVICE (F-01)
+// =============================================
+let cachedProfile = null;
+
+async function loadProfile() {
+    try {
+        const res = await API.getEmployee(currentUser.employeeId);
+        if (!res || !res.ok) return;
+        const emp = await res.json();
+        cachedProfile = emp;
+
+        // Populate details
+        const initials = (emp.firstName?.[0] || '') + (emp.lastName?.[0] || '');
+        document.getElementById('profileAvatarText').textContent = initials;
+        document.getElementById('profileName').textContent = `${emp.firstName} ${emp.lastName}`;
+        document.getElementById('profileJobTitle').textContent = emp.jobTitle || 'N/A';
+
+        document.getElementById('profileEmail').textContent = emp.email || '-';
+        document.getElementById('profilePhone').textContent = emp.phone || '-';
+        document.getElementById('profileDepartment').textContent = emp.department ? emp.department.name : 'N/A';
+        document.getElementById('profileShift').textContent = emp.shift ? emp.shift.name : 'N/A';
+        document.getElementById('profileAllowanceRate').textContent = emp.allowanceRate != null ? `${(emp.allowanceRate * 100).toFixed(1)}%` : 'N/A';
+        document.getElementById('profileDeductionRate').textContent = emp.deductionRate != null ? `${(emp.deductionRate * 100).toFixed(1)}%` : 'N/A';
+        document.getElementById('profileHireDate').textContent = emp.hireDate || '-';
+        document.getElementById('profileSalary').textContent = emp.salary != null ? `$${emp.salary.toLocaleString()}` : '-';
+
+        // Load change requests list
+        loadMyProfileRequests();
+    } catch (e) {
+        console.error('Load profile error:', e);
+    }
+}
+
+async function loadMyProfileRequests() {
+    try {
+        const res = await API.getMyProfileRequests();
+        if (!res || !res.ok) return;
+        const list = await res.json();
+        const tbody = document.getElementById('myChangeRequestsTableBody');
+        if (list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No change requests submitted yet.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = list.map(r => {
+            let fields = {};
+            try { fields = JSON.parse(r.requestedFieldsJson); } catch(e) {}
+            const changes = Object.entries(fields).map(([k, v]) => `<strong>${k}:</strong> ${v}`).join(', ');
+            const statusClass = r.status === 'APPROVED' ? 'badge-active' : (r.status === 'REJECTED' ? 'badge-inactive' : 'badge-pending');
+            return `<tr>
+                <td>${r.id}</td>
+                <td>${formatDateTime(r.submittedAt)}</td>
+                <td>${changes}</td>
+                <td><span class="badge ${statusClass}">${r.status}</span></td>
+                <td>${r.comments || '-'}</td>
+            </tr>`;
+        }).join('');
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function openProfileRequestModal() {
+    if (!cachedProfile) return;
+    document.getElementById('reqFirstName').value = cachedProfile.firstName || '';
+    document.getElementById('reqLastName').value = cachedProfile.lastName || '';
+    document.getElementById('reqPhone').value = cachedProfile.phone || '';
+    openModal('profileRequestModal');
+}
+
+async function submitProfileRequest() {
+    const firstName = document.getElementById('reqFirstName').value.trim();
+    const lastName = document.getElementById('reqLastName').value.trim();
+    const phone = document.getElementById('reqPhone').value.trim();
+
+    if (!firstName || !lastName) {
+        showToast('First Name and Last Name are required', 'warning');
+        return;
+    }
+
+    const payload = {
+        requestedFieldsJson: JSON.stringify({ firstName, lastName, phone })
+    };
+
+    try {
+        const res = await API.submitProfileRequest(payload);
+        if (res && res.ok) {
+            showToast('Profile change request submitted successfully!', 'success');
+            closeModal('profileRequestModal');
+            loadMyProfileRequests();
+        } else {
+            const err = await res.json();
+            showToast(err.message || 'Submission failed', 'error');
+        }
+    } catch (e) {
+        showToast('Network error', 'error');
+    }
+}
+
+// HR Change Requests Management (F-01)
+async function loadChangeRequests() {
+    try {
+        const res = await API.getPendingProfileRequests();
+        if (!res || !res.ok) return;
+        const list = await res.json();
+        
+        // Update badge
+        const badge = document.getElementById('pendingChangesBadge');
+        if (badge) {
+            badge.textContent = list.length;
+            if (list.length > 0) badge.classList.remove('hidden');
+            else badge.classList.add('hidden');
+        }
+
+        const tbody = document.getElementById('changeRequestsTableBody');
+        if (list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;"><div class="empty-state"><p>No pending profile change requests</p></div></td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = list.map(r => {
+            let fields = {};
+            try { fields = JSON.parse(r.requestedFieldsJson); } catch(e) {}
+            const emp = r.employee || {};
+            
+            // Build comparisons
+            const changesList = [];
+            if (fields.firstName && fields.firstName !== emp.firstName) {
+                changesList.push(`First Name: <span class="text-muted" style="text-decoration:line-through;">${emp.firstName}</span> ➡️ <strong>${fields.firstName}</strong>`);
+            }
+            if (fields.lastName && fields.lastName !== emp.lastName) {
+                changesList.push(`Last Name: <span class="text-muted" style="text-decoration:line-through;">${emp.lastName}</span> ➡️ <strong>${fields.lastName}</strong>`);
+            }
+            if (fields.phone && fields.phone !== emp.phone) {
+                changesList.push(`Phone: <span class="text-muted" style="text-decoration:line-through;">${emp.phone || '-'}</span> ➡️ <strong>${fields.phone}</strong>`);
+            }
+
+            const changesHtml = changesList.length > 0 ? changesList.join('<br>') : 'No actual changes detected';
+
+            return `<tr>
+                <td>${r.id}</td>
+                <td><strong>${emp.firstName} ${emp.lastName}</strong><br><span class="text-xs text-muted">ID: ${emp.id} | ${emp.email}</span></td>
+                <td><div style="line-height:1.6;font-size:13px;">${changesHtml}</div></td>
+                <td>${formatDateTime(r.submittedAt)}</td>
+                <td>
+                    <button class="btn btn-success btn-xs" onclick="approveProfileRequest(${r.id})">Approve</button>
+                    <button class="btn btn-danger btn-xs" onclick="rejectProfileRequest(${r.id})">Reject</button>
+                </td>
+            </tr>`;
+        }).join('');
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function approveProfileRequest(id) {
+    if (!confirm('Are you sure you want to approve and apply these profile changes?')) return;
+    try {
+        const res = await API.approveProfileRequest(id);
+        if (res && res.ok) {
+            showToast('Change request approved and applied!', 'success');
+            loadChangeRequests();
+        } else {
+            const err = await res.json();
+            showToast(err.message || 'Approval failed', 'error');
+        }
+    } catch (e) {
+        showToast('Network error', 'error');
+    }
+}
+
+function rejectProfileRequest(id) {
+    showCommentsModal('Reject Profile Request', async (comments) => {
+        try {
+            const res = await API.rejectProfileRequest(id, { comments });
+            if (res && res.ok) {
+                showToast('Change request rejected.', 'info');
+                loadChangeRequests();
+            } else {
+                const err = await res.json();
+                showToast(err.message || 'Rejection failed', 'error');
+            }
+        } catch (e) {
+            showToast('Network error', 'error');
+        }
+    });
+}
+
+
+// =============================================
+//  LEAVE POLICIES CONFIGURATION (F-02)
+// =============================================
+async function loadLeavePolicies() {
+    try {
+        const res = await API.getLeavePolicies();
+        if (!res || !res.ok) return;
+        const list = await res.json();
+        const tbody = document.getElementById('leavePoliciesTableBody');
+        tbody.innerHTML = list.map(p => `
+            <tr>
+                <td><strong>${p.leaveType}</strong></td>
+                <td>${p.annualAllocation} Days</td>
+                <td>${p.monthlyAccrualRate} Days</td>
+                <td>
+                    <button class="btn btn-outline btn-xs" onclick="editLeavePolicy(${p.id}, '${p.leaveType}', ${p.annualAllocation}, ${p.monthlyAccrualRate})">Edit</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function editLeavePolicy(id, leaveType, annual, monthly) {
+    document.getElementById('policyId').value = id;
+    document.getElementById('policyLeaveType').value = leaveType;
+    document.getElementById('policyAnnualAllocation').value = annual;
+    document.getElementById('policyMonthlyAccrualRate').value = monthly;
+    openModal('leavePolicyModal');
+}
+
+async function saveLeavePolicy() {
+    const id = document.getElementById('policyId').value;
+    const annualAllocation = parseFloat(document.getElementById('policyAnnualAllocation').value);
+    const monthlyAccrualRate = parseFloat(document.getElementById('policyMonthlyAccrualRate').value);
+
+    if (isNaN(annualAllocation) || isNaN(monthlyAccrualRate)) {
+        showToast('Please enter valid numeric values', 'warning');
+        return;
+    }
+
+    try {
+        const res = await API.updateLeavePolicy(id, { annualAllocation, monthlyAccrualRate });
+        if (res && res.ok) {
+            showToast('Leave policy updated successfully!', 'success');
+            closeModal('leavePolicyModal');
+            loadLeavePolicies();
+            loadLeaves(); // refresh balance grid if visible
+        } else {
+            const err = await res.json();
+            showToast(err.message || 'Update failed', 'error');
+        }
+    } catch (e) {
+        showToast('Network error', 'error');
+    }
+}
+
+
+// =============================================
+//  SHIFT ROSTERING & CREATION (F-03)
+// =============================================
+function openShiftManagementModal() {
+    loadShiftsTable();
+    openModal('shiftManagementModal');
+}
+
+async function loadShiftsTable() {
+    try {
+        const res = await API.getShifts();
+        if (!res || !res.ok) return;
+        const shifts = await res.json();
+        const tbody = document.getElementById('shiftsTableBody');
+        tbody.innerHTML = shifts.map(s => `
+            <tr>
+                <td><strong>${s.name}</strong></td>
+                <td>${s.startTime.substring(0, 5)}</td>
+                <td>${s.endTime.substring(0, 5)}</td>
+                <td>${s.gracePeriodMinutes} mins</td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function saveNewShift() {
+    const name = document.getElementById('shiftName').value.trim();
+    const startTime = document.getElementById('shiftStartTime').value;
+    const endTime = document.getElementById('shiftEndTime').value;
+    const gracePeriodMinutes = parseInt(document.getElementById('shiftGrace').value);
+
+    if (!name || !startTime || !endTime || isNaN(gracePeriodMinutes)) {
+        showToast('Please fill in all shift details', 'warning');
+        return;
+    }
+
+    const payload = {
+        name,
+        startTime: startTime + ':00',
+        endTime: endTime + ':00',
+        gracePeriodMinutes
+    };
+
+    try {
+        const res = await API.createShift(payload);
+        if (res && res.ok) {
+            showToast('New shift created successfully!', 'success');
+            document.getElementById('shiftForm').reset();
+            loadShiftsTable();
+        } else {
+            const err = await res.json();
+            showToast(err.message || 'Shift creation failed', 'error');
+        }
+    } catch (e) {
+        showToast('Network error', 'error');
+    }
+}
+
+
+// =============================================
+//  EXPENSES & CLAIMS (F-04)
+// =============================================
+async function loadExpenses() {
+    try {
+        // Load employee's own expenses
+        const ownRes = await API.getEmployeeExpenses(currentUser.employeeId);
+        if (ownRes && ownRes.ok) {
+            const list = await ownRes.json();
+            const tbody = document.getElementById('myExpensesTableBody');
+            if (list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No expense claims submitted.</td></tr>';
+            } else {
+                tbody.innerHTML = list.map(ex => {
+                    const statusClass = ex.status === 'APPROVED' ? 'badge-active' : 
+                                      (ex.status === 'REJECTED' ? 'badge-inactive' : 
+                                      (ex.status === 'PAID' ? 'badge-active' : 'badge-pending'));
+                    const statusText = ex.status;
+                    return `<tr>
+                        <td>${ex.id}</td>
+                        <td><strong>${ex.title}</strong></td>
+                        <td>${ex.category}</td>
+                        <td>$${ex.amount.toFixed(2)}</td>
+                        <td>${ex.claimDate}</td>
+                        <td><span class="badge ${statusClass}" style="${ex.status === 'PAID' ? 'background:rgba(54,162,235,0.2);color:rgb(54,162,235);' : ''}">${statusText}</span></td>
+                        <td>${ex.approvedBy ? `${ex.approvedBy.firstName} ${ex.approvedBy.lastName}` : '-'}</td>
+                        <td>${ex.comments || '-'}</td>
+                    </tr>`;
+                }).join('');
+            }
+        }
+
+        // If manager or HR, load pending approvals
+        if (currentUser.role === 'ROLE_HR' || currentUser.role === 'ROLE_MANAGER') {
+            let pendingRes;
+            if (currentUser.role === 'ROLE_HR') {
+                pendingRes = await API.getAllExpenses();
+            } else {
+                pendingRes = await API.getManagerExpenses(currentUser.employeeId);
+            }
+
+            if (pendingRes && pendingRes.ok) {
+                const list = await pendingRes.json();
+                const pendingOnly = list.filter(ex => ex.status === 'PENDING');
+                const tbody = document.getElementById('managerExpensesTableBody');
+                if (pendingOnly.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;"><div class="empty-state"><p>No pending expense claims to approve</p></div></td></tr>';
+                } else {
+                    tbody.innerHTML = pendingOnly.map(ex => `
+                        <tr>
+                            <td>${ex.id}</td>
+                            <td><strong>${ex.employee.firstName} ${ex.employee.lastName}</strong><br><span class="text-xs text-muted">${ex.employee.email}</span></td>
+                            <td><strong>${ex.title}</strong></td>
+                            <td>${ex.category}</td>
+                            <td>$${ex.amount.toFixed(2)}</td>
+                            <td>${ex.claimDate}</td>
+                            <td>
+                                <button class="btn btn-success btn-xs" onclick="approveExpenseClaim(${ex.id})">Approve</button>
+                                <button class="btn btn-danger btn-xs" onclick="rejectExpenseClaim(${ex.id})">Reject</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            }
+        }
+    } catch (e) {
+        console.error('Load expenses error:', e);
+    }
+}
+
+async function submitExpenseForm() {
+    const title = document.getElementById('expenseTitle').value.trim();
+    const amount = parseFloat(document.getElementById('expenseAmount').value);
+    const category = document.getElementById('expenseCategory').value;
+
+    if (!title || isNaN(amount) || amount <= 0) {
+        showToast('Please enter a valid title and positive amount', 'warning');
+        return;
+    }
+
+    const payload = {
+        employee: { id: currentUser.employeeId },
+        title,
+        amount,
+        category
+    };
+
+    try {
+        const res = await API.submitExpenseClaim(payload);
+        if (res && res.ok) {
+            showToast('Expense claim submitted successfully!', 'success');
+            closeModal('expenseClaimModal');
+            loadExpenses();
+        } else {
+            const err = await res.json();
+            showToast(err.message || 'Submission failed', 'error');
+        }
+    } catch (e) {
+        showToast('Network error', 'error');
+    }
+}
+
+async function approveExpenseClaim(id) {
+    if (!confirm('Are you sure you want to approve this expense claim?')) return;
+    try {
+        const res = await API.approveExpenseClaim(id);
+        if (res && res.ok) {
+            showToast('Expense claim approved!', 'success');
+            loadExpenses();
+        } else {
+            const err = await res.json();
+            showToast(err.message || 'Approval failed', 'error');
+        }
+    } catch (e) {
+        showToast('Network error', 'error');
+    }
+}
+
+function rejectExpenseClaim(id) {
+    showCommentsModal('Reject Expense Claim', async (comments) => {
+        try {
+            const res = await API.rejectExpenseClaim(id, { comments });
+            if (res && res.ok) {
+                showToast('Expense claim rejected.', 'info');
+                loadExpenses();
+            } else {
+                const err = await res.json();
+                showToast(err.message || 'Rejection failed', 'error');
+            }
+        } catch (e) {
+            showToast('Network error', 'error');
+        }
+    });
+}
+
+
+// Reusable Comments Modal logic helper
+let commentsCallback = null;
+function showCommentsModal(title, callback) {
+    document.getElementById('commentsModalTitle').textContent = title;
+    document.getElementById('commentsText').value = '';
+    commentsCallback = callback;
+    openModal('comments'); // wait, the modal element ID in HTML is commentsModal!
+    // Let's open 'commentsModal' instead of 'comments'
+    openModal('commentsModal');
+}
+
+// Bind comments submit (doing it here directly)
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('submitCommentsBtn');
+    if (btn) {
+        btn.addEventListener('click', () => {
+            const comments = document.getElementById('commentsText').value.trim();
+            if (!comments) {
+                showToast('Comments are required to reject.', 'warning');
+                return;
+            }
+            if (commentsCallback) {
+                commentsCallback(comments);
+            }
+            closeModal('commentsModal');
+        });
+    }
+});
+

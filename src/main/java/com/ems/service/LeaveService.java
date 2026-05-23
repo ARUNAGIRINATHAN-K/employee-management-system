@@ -3,10 +3,13 @@ package com.ems.service;
 import com.ems.entity.Employee;
 import com.ems.entity.Leave;
 import com.ems.entity.LeaveBalance;
+import com.ems.entity.LeavePolicy;
 import com.ems.repository.EmployeeRepository;
 import com.ems.repository.LeaveBalanceRepository;
 import com.ems.repository.LeaveRepository;
+import com.ems.repository.LeavePolicyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.temporal.ChronoUnit;
@@ -23,6 +26,9 @@ public class LeaveService {
 
     @Autowired
     private EmployeeRepository employeeRepository;
+
+    @Autowired
+    private LeavePolicyRepository leavePolicyRepository;
 
     @Autowired
     private AuditLogService auditLogService;
@@ -42,7 +48,7 @@ public class LeaveService {
         return leaveRepository.findByManagerId(managerId);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<LeaveBalance> getLeaveBalances(Long employeeId) {
         // Ensure default balances exist
         initializeDefaultBalancesIfNeeded(employeeId);
@@ -100,7 +106,7 @@ public class LeaveService {
                 throw new RuntimeException("Cannot approve. Employee has insufficient leave balance.");
             }
 
-            balance.setBalance(balance.getBalance() - (int) requestedDays);
+            balance.setBalance(balance.getBalance() - (double) requestedDays);
             leaveBalanceRepository.save(balance);
             leave.setStatus("APPROVED");
         } else {
@@ -116,15 +122,83 @@ public class LeaveService {
         return updated;
     }
 
+    @Scheduled(cron = "0 0 0 1 * ?") // Midnight of 1st day of every month
+    @Transactional
+    public void runMonthlyAccrual() {
+        System.out.println("Running automated monthly leave accrual...");
+        accrueLeavesForActiveEmployees("SYSTEM");
+    }
+
+    @Transactional
+    public void accrueLeavesManually(String adminUsername) {
+        accrueLeavesForActiveEmployees(adminUsername);
+    }
+
+    private void accrueLeavesForActiveEmployees(String runBy) {
+        List<Employee> activeEmployees = employeeRepository.findByStatusNot("DELETED");
+        List<LeavePolicy> policies = leavePolicyRepository.findAll();
+        for (Employee emp : activeEmployees) {
+            if ("ACTIVE".equalsIgnoreCase(emp.getStatus())) {
+                initializeDefaultBalancesIfNeeded(emp.getId());
+                if (!policies.isEmpty()) {
+                    for (LeavePolicy policy : policies) {
+                        accrueType(emp, policy.getLeaveType(), policy.getMonthlyAccrualRate());
+                    }
+                } else {
+                    accrueType(emp, "CASUAL", 1.5);
+                    accrueType(emp, "SICK", 1.0);
+                    accrueType(emp, "EARNED", 1.5);
+                }
+            }
+        }
+        auditLogService.log("LEAVE_ACCRUAL", runBy, "Triggered leave accrual for active employees using leave policies.");
+    }
+
+    private void accrueType(Employee employee, String leaveType, double amount) {
+        LeaveBalance balance = leaveBalanceRepository.findByEmployeeIdAndLeaveType(employee.getId(), leaveType)
+                .orElseGet(() -> LeaveBalance.builder().employee(employee).leaveType(leaveType).balance(0.0).build());
+        balance.setBalance(balance.getBalance() + amount);
+        leaveBalanceRepository.save(balance);
+    }
+
     private void initializeDefaultBalancesIfNeeded(Long employeeId) {
         List<LeaveBalance> balances = leaveBalanceRepository.findByEmployeeId(employeeId);
         if (balances.isEmpty()) {
             Employee employee = employeeRepository.findById(employeeId)
                     .orElseThrow(() -> new RuntimeException("Employee not found"));
             
-            leaveBalanceRepository.save(LeaveBalance.builder().employee(employee).leaveType("CASUAL").balance(15).build());
-            leaveBalanceRepository.save(LeaveBalance.builder().employee(employee).leaveType("SICK").balance(10).build());
-            leaveBalanceRepository.save(LeaveBalance.builder().employee(employee).leaveType("EARNED").balance(15).build());
+            List<LeavePolicy> policies = leavePolicyRepository.findAll();
+            if (!policies.isEmpty()) {
+                for (LeavePolicy policy : policies) {
+                    leaveBalanceRepository.save(LeaveBalance.builder()
+                            .employee(employee)
+                            .leaveType(policy.getLeaveType())
+                            .balance(policy.getAnnualAllocation())
+                            .build());
+                }
+            } else {
+                leaveBalanceRepository.save(LeaveBalance.builder().employee(employee).leaveType("CASUAL").balance(15.0).build());
+                leaveBalanceRepository.save(LeaveBalance.builder().employee(employee).leaveType("SICK").balance(10.0).build());
+                leaveBalanceRepository.save(LeaveBalance.builder().employee(employee).leaveType("EARNED").balance(15.0).build());
+            }
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<LeavePolicy> getAllPolicies() {
+        return leavePolicyRepository.findAll();
+    }
+
+    @Transactional
+    public LeavePolicy updatePolicy(Long id, LeavePolicy policyDetails, String adminUsername) {
+        LeavePolicy policy = leavePolicyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Leave policy not found"));
+        policy.setAnnualAllocation(policyDetails.getAnnualAllocation());
+        policy.setMonthlyAccrualRate(policyDetails.getMonthlyAccrualRate());
+        LeavePolicy updated = leavePolicyRepository.save(policy);
+        auditLogService.log("LEAVE_POLICY_UPDATE", adminUsername,
+                "Updated leave policy for " + policy.getLeaveType() + 
+                " (Annual: " + policy.getAnnualAllocation() + ", Monthly: " + policy.getMonthlyAccrualRate() + ")");
+        return updated;
     }
 }

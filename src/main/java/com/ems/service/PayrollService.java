@@ -2,8 +2,10 @@ package com.ems.service;
 
 import com.ems.entity.Employee;
 import com.ems.entity.Payroll;
+import com.ems.entity.ExpenseClaim;
 import com.ems.repository.EmployeeRepository;
 import com.ems.repository.PayrollRepository;
+import com.ems.repository.ExpenseClaimRepository;
 import com.lowagie.text.*;
 import com.lowagie.text.Font;
 import com.lowagie.text.Paragraph;
@@ -30,6 +32,9 @@ public class PayrollService {
     @Autowired
     private AuditLogService auditLogService;
 
+    @Autowired
+    private ExpenseClaimRepository expenseClaimRepository;
+
     @Transactional(readOnly = true)
     public List<Payroll> getPayrollHistory(Long employeeId) {
         return payrollRepository.findByEmployeeId(employeeId);
@@ -51,8 +56,32 @@ public class PayrollService {
         }
 
         double basic = employee.getSalary() != null ? employee.getSalary() : 0.0;
-        double allowances = Math.round(basic * 0.12 * 100.0) / 100.0; // 12% allowances
-        double deductions = Math.round(basic * 0.08 * 100.0) / 100.0; // 8% tax / benefits deductions
+        double allowanceRate = employee.getAllowanceRate() != null ? employee.getAllowanceRate() : 0.12;
+        double deductionRate = employee.getDeductionRate() != null ? employee.getDeductionRate() : 0.08;
+
+        // Parse payPeriod to find start and end of calendar month
+        LocalDate startDate;
+        LocalDate endDate;
+        try {
+            String[] parts = payPeriod.split("-");
+            int year = Integer.parseInt(parts[0]);
+            int month = Integer.parseInt(parts[1]);
+            startDate = LocalDate.of(year, month, 1);
+            endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid pay period format. Expected YYYY-MM.");
+        }
+
+        // Query approved expense claims
+        List<ExpenseClaim> approvedClaims = expenseClaimRepository.findForPayroll(employeeId, "APPROVED", startDate, endDate);
+        double expenseSum = 0.0;
+        for (ExpenseClaim claim : approvedClaims) {
+            expenseSum += claim.getAmount();
+        }
+
+        double standardAllowances = Math.round(basic * allowanceRate * 100.0) / 100.0;
+        double allowances = standardAllowances + expenseSum;
+        double deductions = Math.round(basic * deductionRate * 100.0) / 100.0;
         double net = basic + allowances - deductions;
 
         Payroll payroll = Payroll.builder()
@@ -66,8 +95,15 @@ public class PayrollService {
                 .build();
 
         Payroll saved = payrollRepository.save(payroll);
+
+        // Mark claims as PAID
+        for (ExpenseClaim claim : approvedClaims) {
+            claim.setStatus("PAID");
+            expenseClaimRepository.save(claim);
+        }
+
         auditLogService.log("PAYROLL_GENERATE", adminUsername, 
-                "Generated payroll for " + employee.getFirstName() + " " + employee.getLastName() + " (Period: " + payPeriod + ")");
+                "Generated payroll for " + employee.getFirstName() + " " + employee.getLastName() + " (Period: " + payPeriod + ") with " + approvedClaims.size() + " claims worth $" + expenseSum);
         return saved;
     }
 
@@ -164,10 +200,15 @@ public class PayrollService {
             h2.setHorizontalAlignment(Element.ALIGN_RIGHT);
             breakdownTable.addCell(h2);
 
+            // Calculate dynamic rates for PDF display
+            double basicVal = payroll.getBasicSalary() != null && payroll.getBasicSalary() > 0 ? payroll.getBasicSalary() : 1.0;
+            double allowancePercent = Math.round((payroll.getAllowances() / basicVal) * 100.0);
+            double deductionPercent = Math.round((payroll.getDeductions() / basicVal) * 100.0);
+
             // Add Details
             addBreakdownRow(breakdownTable, "Basic Salary", payroll.getBasicSalary(), normalFont);
-            addBreakdownRow(breakdownTable, "Allowances (12% of Basic)", payroll.getAllowances(), normalFont);
-            addBreakdownRow(breakdownTable, "Deductions (8% tax & benefits)", -payroll.getDeductions(), normalFont);
+            addBreakdownRow(breakdownTable, "Allowances (" + (int) allowancePercent + "% of Basic)", payroll.getAllowances(), normalFont);
+            addBreakdownRow(breakdownTable, "Deductions (" + (int) deductionPercent + "% tax & benefits)", -payroll.getDeductions(), normalFont);
 
             // Net Salary summary row
             PdfPCell netCellLabel = new PdfPCell(new Phrase("Net Salary Paid", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, themeColor)));

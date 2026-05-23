@@ -48,11 +48,22 @@ public class Employee {
     @JsonIgnoreProperties("employees")
     private Employee manager;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shift_id")
+    private Shift shift;
+
+    @Column(name = "allowance_rate")
+    private Double allowanceRate; // e.g., 0.12 (12%)
+
+    @Column(name = "deduction_rate")
+    private Double deductionRate; // e.g., 0.08 (8%)
+
     public Employee() {}
 
     public Employee(Long id, String firstName, String lastName, String email, String phone,
                     String jobTitle, LocalDate hireDate, Double salary, String status,
-                    String photoPath, Department department, Employee manager) {
+                    String photoPath, Department department, Employee manager, Shift shift,
+                    Double allowanceRate, Double deductionRate) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -65,6 +76,9 @@ public class Employee {
         this.photoPath = photoPath;
         this.department = department;
         this.manager = manager;
+        this.shift = shift;
+        this.allowanceRate = allowanceRate;
+        this.deductionRate = deductionRate;
     }
 
     public Long getId() {
@@ -163,6 +177,30 @@ public class Employee {
         this.manager = manager;
     }
 
+    public Shift getShift() {
+        return shift;
+    }
+
+    public void setShift(Shift shift) {
+        this.shift = shift;
+    }
+
+    public Double getAllowanceRate() {
+        return allowanceRate;
+    }
+
+    public void setAllowanceRate(Double allowanceRate) {
+        this.allowanceRate = allowanceRate;
+    }
+
+    public Double getDeductionRate() {
+        return deductionRate;
+    }
+
+    public void setDeductionRate(Double deductionRate) {
+        this.deductionRate = deductionRate;
+    }
+
     public static EmployeeBuilder builder() {
         return new EmployeeBuilder();
     }
@@ -180,6 +218,9 @@ public class Employee {
         private String photoPath;
         private Department department;
         private Employee manager;
+        private Shift shift;
+        private Double allowanceRate;
+        private Double deductionRate;
 
         public EmployeeBuilder id(Long id) { this.id = id; return this; }
         public EmployeeBuilder firstName(String firstName) { this.firstName = firstName; return this; }
@@ -193,9 +234,12 @@ public class Employee {
         public EmployeeBuilder photoPath(String photoPath) { this.photoPath = photoPath; return this; }
         public EmployeeBuilder department(Department department) { this.department = department; return this; }
         public EmployeeBuilder manager(Employee manager) { this.manager = manager; return this; }
+        public EmployeeBuilder shift(Shift shift) { this.shift = shift; return this; }
+        public EmployeeBuilder allowanceRate(Double allowanceRate) { this.allowanceRate = allowanceRate; return this; }
+        public EmployeeBuilder deductionRate(Double deductionRate) { this.deductionRate = deductionRate; return this; }
 
         public Employee build() {
-            return new Employee(id, firstName, lastName, email, phone, jobTitle, hireDate, salary, status, photoPath, department, manager);
+            return new Employee(id, firstName, lastName, email, phone, jobTitle, hireDate, salary, status, photoPath, department, manager, shift, allowanceRate, deductionRate);
         }
     }
 }

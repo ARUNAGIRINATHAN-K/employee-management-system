@@ -122,6 +122,28 @@ const API = {
     async processLeave(leaveId, status, comments) {
         return this.post(`/api/leaves/${leaveId}/approve?status=${status}&comments=${encodeURIComponent(comments)}`);
     },
+    async accrueLeaves() { return this.post('/api/leaves/accrue'); },
+    async getLeavePolicies() { return this.get('/api/leaves/policies'); },
+    async updateLeavePolicy(id, data) { return this.put(`/api/leaves/policies/${id}`, data); },
+
+    // ---------- SHIFTS ----------
+    async getShifts() { return this.get('/api/shifts'); },
+    async createShift(data) { return this.post('/api/shifts', data); },
+
+    // ---------- PROFILE CHANGES ----------
+    async getMyProfileRequests() { return this.get('/api/profile-changes/my-requests'); },
+    async getPendingProfileRequests() { return this.get('/api/profile-changes/pending'); },
+    async submitProfileRequest(data) { return this.post('/api/profile-changes', data); },
+    async approveProfileRequest(id) { return this.post(`/api/profile-changes/${id}/approve`); },
+    async rejectProfileRequest(id, data) { return this.post(`/api/profile-changes/${id}/reject`, data); },
+
+    // ---------- EXPENSES ----------
+    async getAllExpenses() { return this.get('/api/expenses'); },
+    async getEmployeeExpenses(empId) { return this.get(`/api/expenses/employee/${empId}`); },
+    async getManagerExpenses(mgrId) { return this.get(`/api/expenses/manager/${mgrId}`); },
+    async submitExpenseClaim(data) { return this.post('/api/expenses', data); },
+    async approveExpenseClaim(id) { return this.post(`/api/expenses/${id}/approve`); },
+    async rejectExpenseClaim(id, data) { return this.post(`/api/expenses/${id}/reject`, data); },
 
     // ---------- ATTENDANCE ----------
     async checkIn(empId) { return this.post(`/api/attendance/check-in/${empId}`); },

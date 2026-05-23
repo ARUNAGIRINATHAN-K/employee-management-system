@@ -98,6 +98,9 @@ public class EmployeeService {
         if (employeeDetails.getManager() != null) {
             employee.setManager(employeeDetails.getManager());
         }
+        employee.setShift(employeeDetails.getShift());
+        employee.setAllowanceRate(employeeDetails.getAllowanceRate());
+        employee.setDeductionRate(employeeDetails.getDeductionRate());
         
         Employee updated = employeeRepository.save(employee);
         auditLogService.log("UPDATE_EMPLOYEE", adminUsername, 

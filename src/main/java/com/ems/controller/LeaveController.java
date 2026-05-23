@@ -2,6 +2,7 @@ package com.ems.controller;
 
 import com.ems.entity.Leave;
 import com.ems.entity.LeaveBalance;
+import com.ems.entity.LeavePolicy;
 import com.ems.service.LeaveService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -60,6 +61,35 @@ public class LeaveController {
         try {
             String managerUsername = SecurityContextHolder.getContext().getAuthentication().getName();
             Leave updated = leaveService.approveOrRejectLeave(id, status, comments, managerUsername);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/accrue")
+    @PreAuthorize("hasAuthority('ROLE_HR')")
+    public ResponseEntity<?> accrueLeaves() {
+        try {
+            String adminUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+            leaveService.accrueLeavesManually(adminUsername);
+            return ResponseEntity.ok(Map.of("message", "Leave accrual completed successfully."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/policies")
+    public ResponseEntity<List<LeavePolicy>> getAllPolicies() {
+        return ResponseEntity.ok(leaveService.getAllPolicies());
+    }
+
+    @PutMapping("/policies/{id}")
+    @PreAuthorize("hasAuthority('ROLE_HR')")
+    public ResponseEntity<?> updatePolicy(@PathVariable Long id, @RequestBody LeavePolicy policyDetails) {
+        try {
+            String adminUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+            LeavePolicy updated = leaveService.updatePolicy(id, policyDetails, adminUsername);
             return ResponseEntity.ok(updated);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));

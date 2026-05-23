@@ -22,11 +22,11 @@ public class LeaveBalance {
     private String leaveType;
 
     @Column(nullable = false)
-    private Integer balance; // Days remaining
+    private Double balance; // Days remaining
 
     public LeaveBalance() {}
 
-    public LeaveBalance(Long id, Employee employee, String leaveType, Integer balance) {
+    public LeaveBalance(Long id, Employee employee, String leaveType, Double balance) {
         this.id = id;
         this.employee = employee;
         this.leaveType = leaveType;
@@ -57,11 +57,11 @@ public class LeaveBalance {
         this.leaveType = leaveType;
     }
 
-    public Integer getBalance() {
+    public Double getBalance() {
         return balance;
     }
 
-    public void setBalance(Integer balance) {
+    public void setBalance(Double balance) {
         this.balance = balance;
     }
 
@@ -73,12 +73,12 @@ public class LeaveBalance {
         private Long id;
         private Employee employee;
         private String leaveType;
-        private Integer balance;
+        private Double balance;
 
         public LeaveBalanceBuilder id(Long id) { this.id = id; return this; }
         public LeaveBalanceBuilder employee(Employee employee) { this.employee = employee; return this; }
         public LeaveBalanceBuilder leaveType(String leaveType) { this.leaveType = leaveType; return this; }
-        public LeaveBalanceBuilder balance(Integer balance) { this.balance = balance; return this; }
+        public LeaveBalanceBuilder balance(Double balance) { this.balance = balance; return this; }
 
         public LeaveBalance build() {
             return new LeaveBalance(id, employee, leaveType, balance);
