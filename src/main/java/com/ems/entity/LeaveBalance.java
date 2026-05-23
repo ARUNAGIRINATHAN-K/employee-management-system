@@ -16,6 +16,7 @@ public class LeaveBalance {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
+    @JsonIgnoreProperties({"department", "manager", "shift"})
     private Employee employee;
 
     @Column(name = "leave_type", nullable = false)

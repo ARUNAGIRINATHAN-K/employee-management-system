@@ -15,6 +15,7 @@ public class ProfileChangeRequest {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
+    @JsonIgnoreProperties({"department", "manager", "shift"})
     private Employee employee;
 
     @Column(name = "requested_fields_json", nullable = false, length = 1000)
@@ -28,6 +29,7 @@ public class ProfileChangeRequest {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "processed_by")
+    @JsonIgnoreProperties({"department", "manager", "shift"})
     private Employee processedBy;
 
     @Column(name = "processed_at")

@@ -19,6 +19,7 @@ public class Department {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "manager_id")
+    @JsonIgnoreProperties({"department", "manager"})
     private Employee manager; // Department Head
 
     public Department() {}

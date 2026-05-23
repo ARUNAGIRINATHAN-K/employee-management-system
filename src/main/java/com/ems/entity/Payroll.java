@@ -17,6 +17,7 @@ public class Payroll {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
+    @JsonIgnoreProperties({"department", "manager", "shift"})
     private Employee employee;
 
     @Column(name = "pay_period", nullable = false)

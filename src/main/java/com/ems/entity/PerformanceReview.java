@@ -15,10 +15,12 @@ public class PerformanceReview {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
+    @JsonIgnoreProperties({"department", "manager", "shift"})
     private Employee employee;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewer_id", nullable = false)
+    @JsonIgnoreProperties({"department", "manager", "shift"})
     private Employee reviewer;
 
     @Column(name = "review_date", nullable = false)

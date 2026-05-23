@@ -40,12 +40,12 @@ public class Employee {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id")
-    @JsonIgnoreProperties("employees")
+    @JsonIgnoreProperties({"manager"})
     private Department department;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "manager_id")
-    @JsonIgnoreProperties("employees")
+    @JsonIgnoreProperties({"manager", "department"})
     private Employee manager;
 
     @ManyToOne(fetch = FetchType.LAZY)

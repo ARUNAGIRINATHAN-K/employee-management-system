@@ -15,6 +15,7 @@ public class Leave {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
+    @JsonIgnoreProperties({"department", "manager", "shift"})
     private Employee employee;
 
     @Column(name = "leave_type", nullable = false)
@@ -33,6 +34,7 @@ public class Leave {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "approved_by")
+    @JsonIgnoreProperties({"department", "manager", "shift"})
     private Employee approvedBy;
 
     private String comments;
