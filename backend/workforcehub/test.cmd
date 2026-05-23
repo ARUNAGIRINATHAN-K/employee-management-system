@@ -1,1 +1,0 @@
-if exist "%JAVA_HOME%\bin\java.exe" (echo OK) else (echo FAIL)

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="EMS Dashboard - Manage employees, departments, leaves, attendance, payroll and performance">
+    <title>EMS - Dashboard</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+
+    <div class="dashboard-layout">
+        <!-- ======== SIDEBAR ======== -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">⚡</div>
+                <h2>EMS Portal</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Main</div>
+                    <div class="nav-item active" data-section="dashboard" id="navDashboard">
+                        <span class="nav-icon">📊</span> Dashboard
+                    </div>
+                    <div class="nav-item" data-section="employees" id="navEmployees">
+                        <span class="nav-icon">👥</span> Employees
+                    </div>
+                    <div class="nav-item" data-section="departments" id="navDepartments">
+                        <span class="nav-icon">🏢</span> Departments
+                    </div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Management</div>
+                    <div class="nav-item" data-section="leaves" id="navLeaves">
+                        <span class="nav-icon">🏖️</span> Leave Management
+                        <span class="nav-badge hidden" id="pendingLeavesBadge">0</span>
+                    </div>
+                    <div class="nav-item" data-section="attendance" id="navAttendance">
+                        <span class="nav-icon">⏱️</span> Attendance
+                    </div>
+                    <div class="nav-item" data-section="payroll" id="navPayroll">
+                        <span class="nav-icon">💰</span> Payroll
+                    </div>
+                    <div class="nav-item" data-section="performance" id="navPerformance">
+                        <span class="nav-icon">⭐</span> Performance
+                    </div>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-profile" id="userProfile">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <div class="user-info">
+                        <h4 id="userNameDisplay">Admin</h4>
+                        <span id="userRoleDisplay">HR</span>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:10px;">
+                    <button class="btn btn-outline btn-sm" id="themeToggle" style="flex:1;" title="Toggle Theme">🌙 Theme</button>
+                    <button class="btn btn-outline btn-sm" id="logoutBtn" style="flex:1;color:var(--danger);" title="Logout">🚪 Logout</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ======== MAIN CONTENT ======== -->
+        <main class="main-content">
+            <header class="main-header">
+                <div class="header-left">
+                    <button class="header-btn" id="menuToggle" style="display:none;">☰</button>
+                    <h1 class="page-title" id="pageTitle">Dashboard</h1>
+                </div>
+                <div class="header-right">
+                    <button class="header-btn" id="notifBtn" title="Notifications">
+                        🔔 <span class="badge-dot hidden" id="notifDot"></span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="main-body">
+
+                <!-- ======== DASHBOARD SECTION ======== -->
+                <section class="content-section active" id="sectionDashboard">
+                    <div class="stats-grid" id="statsGrid"></div>
+                    <div class="charts-grid">
+                        <div class="card">
+                            <div class="card-header"><h3>Department Distribution</h3></div>
+                            <div class="card-body"><div class="chart-container"><canvas id="deptChart"></canvas></div></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><h3>Leave Statistics</h3></div>
+                            <div class="card-body"><div class="chart-container"><canvas id="leaveChart"></canvas></div></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h3>Recent Activity</h3></div>
+                        <div class="card-body"><ul class="activity-feed" id="activityFeed"></ul></div>
+                    </div>
+                </section>
+
+                <!-- ======== EMPLOYEES SECTION ======== -->
+                <section class="content-section" id="sectionEmployees">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <div class="search-box">
+                                <span class="search-icon">🔍</span>
+                                <input type="text" id="empSearch" placeholder="Search by name, email, department...">
+                            </div>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-outline btn-sm" id="exportExcelBtn">📥 Excel</button>
+                            <button class="btn btn-outline btn-sm" id="exportPdfBtn">📄 PDF</button>
+                            <button class="btn btn-primary btn-sm" id="addEmployeeBtn">➕ Add Employee</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table class="data-table" id="employeeTable">
+                                <thead>
+                                    <tr>
+                                        <th data-sort="id">ID ↕</th>
+                                        <th data-sort="firstName">Employee ↕</th>
+                                        <th data-sort="email">Email ↕</th>
+                                        <th>Phone</th>
+                                        <th data-sort="jobTitle">Job Title ↕</th>
+                                        <th>Department</th>
+                                        <th data-sort="salary">Salary ↕</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="employeeTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination" id="employeePagination"></div>
+                    </div>
+                </section>
+
+                <!-- ======== DEPARTMENTS SECTION ======== -->
+                <section class="content-section" id="sectionDepartments">
+                    <div class="toolbar">
+                        <div class="toolbar-left"><h3 style="font-weight:600;">All Departments</h3></div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-primary btn-sm" id="addDeptBtn">➕ Add Department</button>
+                        </div>
+                    </div>
+                    <div class="stats-grid" id="deptGrid"></div>
+                </section>
+
+                <!-- ======== LEAVES SECTION ======== -->
+                <section class="content-section" id="sectionLeaves">
+                    <div class="balance-grid" id="leaveBalanceGrid"></div>
+                    <div class="toolbar">
+                        <div class="toolbar-left"><h3 style="font-weight:600;">Leave History</h3></div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-primary btn-sm" id="applyLeaveBtn">✈️ Apply Leave</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Reason</th><th>Status</th><th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leaveTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ======== ATTENDANCE SECTION ======== -->
+                <section class="content-section" id="sectionAttendance">
+                    <div class="attendance-status-card" id="attendanceStatusCard">
+                        <div class="status-icon" style="background:var(--info-light);color:var(--info);">⏱️</div>
+                        <div>
+                            <strong id="attendanceStatusText">Loading...</strong>
+                            <p class="text-muted text-sm" id="attendanceTimeText"></p>
+                        </div>
+                    </div>
+                    <div class="attendance-actions" id="attendanceActions">
+                        <button class="btn btn-success" id="checkInBtn">☀️ Check In</button>
+                        <button class="btn btn-warning" id="checkOutBtn">🌙 Check Out</button>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h3>Attendance History</h3></div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr><th>Date</th><th>Check In</th><th>Check Out</th><th>Status</th><th>Notes</th></tr>
+                                </thead>
+                                <tbody id="attendanceTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ======== PAYROLL SECTION ======== -->
+                <section class="content-section" id="sectionPayroll">
+                    <div class="toolbar">
+                        <div class="toolbar-left"><h3 style="font-weight:600;">Payroll Records</h3></div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-primary btn-sm" id="generatePayrollBtn">💳 Generate Payroll</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr><th>ID</th><th>Employee</th><th>Period</th><th>Basic</th><th>Allowances</th><th>Deductions</th><th>Net Salary</th><th>Status</th><th>Actions</th></tr>
+                                </thead>
+                                <tbody id="payrollTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ======== PERFORMANCE SECTION ======== -->
+                <section class="content-section" id="sectionPerformance">
+                    <div class="toolbar">
+                        <div class="toolbar-left"><h3 style="font-weight:600;">Performance Reviews</h3></div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-primary btn-sm" id="addReviewBtn">⭐ Add Review</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr><th>Employee</th><th>Reviewer</th><th>Date</th><th>Rating</th><th>KPI Goals</th><th>Promotion</th><th>Comments</th></tr>
+                                </thead>
+                                <tbody id="perfTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ======== MODALS ======== -->
+
+    <!-- Employee Modal -->
+    <div class="modal-overlay" id="employeeModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="empModalTitle">Add Employee</h3>
+                <button class="modal-close" onclick="closeModal('employeeModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="employeeForm">
+                    <input type="hidden" id="empId">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="empFirstName">First Name *</label>
+                            <input class="form-control" id="empFirstName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="empLastName">Last Name *</label>
+                            <input class="form-control" id="empLastName" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="empEmail">Email *</label>
+                            <input class="form-control" id="empEmail" type="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="empPhone">Phone</label>
+                            <input class="form-control" id="empPhone">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="empJobTitle">Job Title</label>
+                            <input class="form-control" id="empJobTitle">
+                        </div>
+                        <div class="form-group">
+                            <label for="empSalary">Salary</label>
+                            <input class="form-control" id="empSalary" type="number" step="0.01">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="empHireDate">Hire Date</label>
+                            <input class="form-control" id="empHireDate" type="date">
+                        </div>
+                        <div class="form-group">
+                            <label for="empDepartment">Department</label>
+                            <select class="form-control" id="empDepartment">
+                                <option value="">-- Select --</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('employeeModal')">Cancel</button>
+                <button class="btn btn-primary" id="saveEmployeeBtn">Save Employee</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Department Modal -->
+    <div class="modal-overlay" id="departmentModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="deptModalTitle">Add Department</h3>
+                <button class="modal-close" onclick="closeModal('departmentModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="departmentForm">
+                    <input type="hidden" id="deptId">
+                    <div class="form-group">
+                        <label for="deptName">Department Name *</label>
+                        <input class="form-control" id="deptName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="deptDesc">Description</label>
+                        <textarea class="form-control" id="deptDesc" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('departmentModal')">Cancel</button>
+                <button class="btn btn-primary" id="saveDeptBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leave Apply Modal -->
+    <div class="modal-overlay" id="leaveModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Apply for Leave</h3>
+                <button class="modal-close" onclick="closeModal('leaveModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="leaveForm">
+                    <div class="form-group">
+                        <label for="leaveType">Leave Type *</label>
+                        <select class="form-control" id="leaveType">
+                            <option value="CASUAL">Casual Leave</option>
+                            <option value="SICK">Sick Leave</option>
+                            <option value="EARNED">Earned Leave</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="leaveStart">Start Date *</label>
+                            <input class="form-control" id="leaveStart" type="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="leaveEnd">End Date *</label>
+                            <input class="form-control" id="leaveEnd" type="date" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="leaveReason">Reason</label>
+                        <textarea class="form-control" id="leaveReason" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('leaveModal')">Cancel</button>
+                <button class="btn btn-primary" id="submitLeaveBtn">Submit Application</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payroll Generate Modal -->
+    <div class="modal-overlay" id="payrollModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Generate Payroll</h3>
+                <button class="modal-close" onclick="closeModal('payrollModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="payrollForm">
+                    <div class="form-group">
+                        <label for="payrollEmployee">Employee *</label>
+                        <select class="form-control" id="payrollEmployee"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="payrollPeriod">Pay Period * (YYYY-MM)</label>
+                        <input class="form-control" id="payrollPeriod" type="month" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('payrollModal')">Cancel</button>
+                <button class="btn btn-primary" id="submitPayrollBtn">Generate</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Review Modal -->
+    <div class="modal-overlay" id="perfModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Add Performance Review</h3>
+                <button class="modal-close" onclick="closeModal('perfModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="perfForm">
+                    <div class="form-group">
+                        <label for="perfEmployee">Employee *</label>
+                        <select class="form-control" id="perfEmployee"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="perfRating">Rating (1-5) *</label>
+                        <select class="form-control" id="perfRating">
+                            <option value="5">⭐⭐⭐⭐⭐ Outstanding (5)</option>
+                            <option value="4">⭐⭐⭐⭐ Excellent (4)</option>
+                            <option value="3" selected>⭐⭐⭐ Good (3)</option>
+                            <option value="2">⭐⭐ Needs Improvement (2)</option>
+                            <option value="1">⭐ Unsatisfactory (1)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="perfKpi">KPI Goals</label>
+                        <textarea class="form-control" id="perfKpi" rows="2" placeholder="e.g., Complete project X, Improve code quality..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="perfComments">Comments</label>
+                        <textarea class="form-control" id="perfComments" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label><input type="checkbox" id="perfPromotion"> Recommend for Promotion</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('perfModal')">Cancel</button>
+                <button class="btn btn-primary" id="submitPerfBtn">Submit Review</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
