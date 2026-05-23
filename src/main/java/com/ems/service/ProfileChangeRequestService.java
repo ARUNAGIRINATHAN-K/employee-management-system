@@ -27,6 +27,9 @@ public class ProfileChangeRequestService {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private NotificationService notificationService;
+
     @Transactional(readOnly = true)
     public List<ProfileChangeRequest> getRequestsByEmployee(Long employeeId) {
         return profileChangeRequestRepository.findByEmployeeId(employeeId);
@@ -59,6 +62,7 @@ public class ProfileChangeRequestService {
         ProfileChangeRequest saved = profileChangeRequestRepository.save(request);
         auditLogService.log("PROFILE_CHANGE_SUBMIT", requesterUsername,
                 "Submitted a profile change request (ID: " + saved.getId() + ")");
+        notificationService.sendNotification("New profile change request submitted by " + employee.getFirstName() + " " + employee.getLastName());
         return saved;
     }
 
@@ -101,6 +105,7 @@ public class ProfileChangeRequestService {
 
         auditLogService.log("PROFILE_CHANGE_APPROVE", hrUsername,
                 "Approved profile change request ID: " + requestId + " for employee ID: " + employee.getId());
+        notificationService.sendNotification("Profile change request for " + employee.getFirstName() + " " + employee.getLastName() + " has been APPROVED.");
         return saved;
     }
 
@@ -125,6 +130,7 @@ public class ProfileChangeRequestService {
 
         auditLogService.log("PROFILE_CHANGE_REJECT", hrUsername,
                 "Rejected profile change request ID: " + requestId + " with comments: " + comments);
+        notificationService.sendNotification("Profile change request for " + request.getEmployee().getFirstName() + " " + request.getEmployee().getLastName() + " has been REJECTED.");
         return saved;
     }
 }

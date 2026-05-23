@@ -22,6 +22,9 @@ public class ExpenseClaimService {
     @Autowired
     private AuditLogService auditLogService;
 
+    @Autowired
+    private NotificationService notificationService;
+
     @Transactional(readOnly = true)
     public List<ExpenseClaim> getAllClaims() {
         return expenseClaimRepository.findAll();
@@ -55,6 +58,7 @@ public class ExpenseClaimService {
         ExpenseClaim saved = expenseClaimRepository.save(claim);
         auditLogService.log("EXPENSE_CLAIM_SUBMIT", requesterUsername,
                 "Submitted expense claim: " + claim.getTitle() + " for $" + claim.getAmount() + " (ID: " + saved.getId() + ")");
+        notificationService.sendNotification("New expense claim '" + claim.getTitle() + "' submitted by " + employee.getFirstName() + " " + employee.getLastName() + " for $" + claim.getAmount());
         return saved;
     }
 
@@ -77,6 +81,7 @@ public class ExpenseClaimService {
 
         auditLogService.log("EXPENSE_CLAIM_APPROVE", managerUsername,
                 "Approved expense claim ID: " + claimId + " for $" + claim.getAmount());
+        notificationService.sendNotification("Expense claim #" + claimId + " for " + updated.getEmployee().getFirstName() + " " + updated.getEmployee().getLastName() + " has been APPROVED.");
         return updated;
     }
 
@@ -100,6 +105,7 @@ public class ExpenseClaimService {
 
         auditLogService.log("EXPENSE_CLAIM_REJECT", managerUsername,
                 "Rejected expense claim ID: " + claimId + " with comment: " + comments);
+        notificationService.sendNotification("Expense claim #" + claimId + " for " + updated.getEmployee().getFirstName() + " " + updated.getEmployee().getLastName() + " has been REJECTED.");
         return updated;
     }
 }

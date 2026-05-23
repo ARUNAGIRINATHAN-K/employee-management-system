@@ -32,6 +32,8 @@ function initApp() {
     applyRolePermissions();
     loadDashboard();
     setupResponsiveMenu();
+    loadLeaveTypesDropdown();
+    setupNotificationsSSE();
 }
 
 // ---------- Theme ----------
@@ -261,33 +263,63 @@ async function loadDashboard() {
         // Stats Cards
         const statsHtml = `
             <div class="stat-card purple">
-                <div class="stat-icon">👥</div>
+                <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
                 <div class="stat-value">${data.totalEmployees || 0}</div>
                 <div class="stat-label">Total Employees</div>
             </div>
             <div class="stat-card green">
-                <div class="stat-icon">✅</div>
+                <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
                 <div class="stat-value">${data.activeEmployees || 0}</div>
                 <div class="stat-label">Active Employees</div>
             </div>
             <div class="stat-card blue">
-                <div class="stat-icon">🏢</div>
+                <div class="stat-icon"><i class="fa-solid fa-building"></i></div>
                 <div class="stat-value">${data.totalDepartments || 0}</div>
                 <div class="stat-label">Departments</div>
             </div>
             <div class="stat-card orange">
-                <div class="stat-icon">📋</div>
+                <div class="stat-icon"><i class="fa-solid fa-calendar-minus"></i></div>
                 <div class="stat-value">${data.pendingLeaves || 0}</div>
                 <div class="stat-label">Pending Leaves</div>
+            </div>
+            <div class="stat-card yellow">
+                <div class="stat-icon"><i class="fa-solid fa-file-signature"></i></div>
+                <div class="stat-value">${data.pendingProfileRequests || 0}</div>
+                <div class="stat-label">Pending Profile Edits</div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-icon"><i class="fa-solid fa-receipt"></i></div>
+                <div class="stat-value">${data.pendingExpenseClaims || 0}</div>
+                <div class="stat-label">Pending Expenses</div>
+            </div>
+            <div class="stat-card teal">
+                <div class="stat-icon"><i class="fa-solid fa-wallet"></i></div>
+                <div class="stat-value">$${(data.totalMonthlyPayroll || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                <div class="stat-label">Monthly Payout</div>
             </div>
         `;
         document.getElementById('statsGrid').innerHTML = statsHtml;
 
         // Update pending leaves badge
         const badge = document.getElementById('pendingLeavesBadge');
-        if (data.pendingLeaves > 0) {
-            badge.textContent = data.pendingLeaves;
-            badge.classList.remove('hidden');
+        if (badge) {
+            if (data.pendingLeaves > 0) {
+                badge.textContent = data.pendingLeaves;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // Update pending profile changes badge
+        const prBadge = document.getElementById('pendingChangesBadge');
+        if (prBadge) {
+            if (data.pendingProfileRequests > 0) {
+                prBadge.textContent = data.pendingProfileRequests;
+                prBadge.classList.remove('hidden');
+            } else {
+                prBadge.classList.add('hidden');
+            }
         }
 
         // Department Chart
@@ -422,11 +454,11 @@ function renderEmployeeTable(employees) {
             <td><span class="badge ${statusClass}">${e.status}</span></td>
             <td>
                 ${isPrivileged ? `
-                    <button class="btn btn-outline btn-sm btn-icon" onclick="editEmployee(${e.id})" title="Edit">✏️</button>
-                    <button class="btn btn-outline btn-sm btn-icon" onclick="uploadEmployeePhoto(${e.id})" title="Upload Photo">📷</button>
+                    <button class="btn btn-outline btn-sm btn-icon" onclick="editEmployee(${e.id})" title="Edit"><i class="fa-solid fa-pencil"></i></button>
+                    <button class="btn btn-outline btn-sm btn-icon" onclick="uploadEmployeePhoto(${e.id})" title="Upload Photo"><i class="fa-solid fa-camera"></i></button>
                 ` : ''}
                 ${currentUser.role === 'ROLE_HR' ? `
-                    <button class="btn btn-outline btn-sm btn-icon" onclick="deleteEmployee(${e.id})" title="Delete" style="color:var(--danger)">🗑️</button>
+                    <button class="btn btn-outline btn-sm btn-icon" onclick="deleteEmployee(${e.id})" title="Delete" style="color:var(--danger)"><i class="fa-solid fa-trash-can"></i></button>
                 ` : ''}
             </td>
         </tr>`;
@@ -743,8 +775,8 @@ function renderLeaveTable(leaves) {
             <td><span class="badge ${statusClass}">${l.status}</span></td>
             <td>
                 ${canApprove && l.status === 'PENDING' ? `
-                    <button class="btn btn-success btn-sm" onclick="processLeave(${l.id},'APPROVED')">✓</button>
-                    <button class="btn btn-danger btn-sm" onclick="processLeave(${l.id},'REJECTED')">✕</button>
+                    <button class="btn btn-success btn-sm" onclick="processLeave(${l.id},'APPROVED')"><i class="fa-solid fa-check"></i></button>
+                    <button class="btn btn-danger btn-sm" onclick="processLeave(${l.id},'REJECTED')"><i class="fa-solid fa-xmark"></i></button>
                 ` : '-'}
             </td>
         </tr>`;
@@ -918,9 +950,9 @@ function renderPayrollTable(records) {
             <td><strong>$${(p.netSalary || 0).toLocaleString()}</strong></td>
             <td><span class="badge ${statusClass}">${p.status}</span></td>
             <td>
-                <button class="btn btn-outline btn-sm" onclick="downloadPayslip(${p.id})">📄 Payslip</button>
+                <button class="btn btn-outline btn-sm" onclick="downloadPayslip(${p.id})"><i class="fa-solid fa-file-pdf"></i> Payslip</button>
                 ${currentUser.role === 'ROLE_HR' && p.status === 'PENDING' ? `
-                    <button class="btn btn-success btn-sm" onclick="markPaid(${p.id})">💸 Pay</button>
+                    <button class="btn btn-success btn-sm" onclick="markPaid(${p.id})"><i class="fa-solid fa-money-bill-wave"></i> Pay</button>
                 ` : ''}
             </td>
         </tr>`;
@@ -1008,7 +1040,9 @@ function renderPerfTable(reviews) {
         const empName = r.employee ? `${r.employee.firstName} ${r.employee.lastName}` : '-';
         const revName = r.reviewer ? `${r.reviewer.firstName} ${r.reviewer.lastName}` : '-';
         const stars = Array.from({ length: 5 }, (_, i) =>
-            `<span class="star ${i < r.rating ? 'filled' : ''}">★</span>`
+            i < r.rating 
+                ? `<i class="fa-solid fa-star" style="color: #ffc107; margin-right: 2px;"></i>`
+                : `<i class="fa-regular fa-star" style="color: var(--text-secondary); opacity: 0.4; margin-right: 2px;"></i>`
         ).join('');
         return `<tr>
             <td>${empName}</td>
@@ -1121,13 +1155,18 @@ function renderPagination(pageData, containerId, callback) {
 // ---------- Toast Notifications ----------
 function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
-    const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+    const icons = {
+        success: '<i class="fa-solid fa-circle-check"></i>',
+        error: '<i class="fa-solid fa-circle-xmark"></i>',
+        info: '<i class="fa-solid fa-circle-info"></i>',
+        warning: '<i class="fa-solid fa-triangle-exclamation"></i>'
+    };
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.innerHTML = `
         <span class="toast-icon">${icons[type]}</span>
         <span class="toast-text">${message}</span>
-        <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
+        <button class="toast-close" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
     `;
     container.appendChild(toast);
     setTimeout(() => { if (toast.parentElement) toast.remove(); }, 5000);
@@ -1261,13 +1300,13 @@ async function loadChangeRequests() {
             // Build comparisons
             const changesList = [];
             if (fields.firstName && fields.firstName !== emp.firstName) {
-                changesList.push(`First Name: <span class="text-muted" style="text-decoration:line-through;">${emp.firstName}</span> ➡️ <strong>${fields.firstName}</strong>`);
+                changesList.push(`First Name: <span class="text-muted" style="text-decoration:line-through;">${emp.firstName}</span> <i class="fa-solid fa-arrow-right-long" style="margin: 0 4px; color: var(--primary);"></i> <strong>${fields.firstName}</strong>`);
             }
             if (fields.lastName && fields.lastName !== emp.lastName) {
-                changesList.push(`Last Name: <span class="text-muted" style="text-decoration:line-through;">${emp.lastName}</span> ➡️ <strong>${fields.lastName}</strong>`);
+                changesList.push(`Last Name: <span class="text-muted" style="text-decoration:line-through;">${emp.lastName}</span> <i class="fa-solid fa-arrow-right-long" style="margin: 0 4px; color: var(--primary);"></i> <strong>${fields.lastName}</strong>`);
             }
             if (fields.phone && fields.phone !== emp.phone) {
-                changesList.push(`Phone: <span class="text-muted" style="text-decoration:line-through;">${emp.phone || '-'}</span> ➡️ <strong>${fields.phone}</strong>`);
+                changesList.push(`Phone: <span class="text-muted" style="text-decoration:line-through;">${emp.phone || '-'}</span> <i class="fa-solid fa-arrow-right-long" style="margin: 0 4px; color: var(--primary);"></i> <strong>${fields.phone}</strong>`);
             }
 
             const changesHtml = changesList.length > 0 ? changesList.join('<br>') : 'No actual changes detected';
@@ -1606,4 +1645,134 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// =============================================
+//  DYNAMIC DROPDOWNS & REAL-TIME SSE (F-02)
+// =============================================
+async function loadLeaveTypesDropdown() {
+    try {
+        const res = await API.getLeavePolicies();
+        if (!res || !res.ok) return;
+        const policies = await res.json();
+        const select = document.getElementById('leaveType');
+        if (select) {
+            select.innerHTML = policies.map(p => 
+                `<option value="${p.leaveType}">${capitalize(p.leaveType.toLowerCase())} Leave</option>`
+            ).join('');
+        }
+    } catch (e) {
+        console.error('Error loading leave policies for dropdown:', e);
+    }
+}
+
+let sseSource = null;
+
+function setupNotificationsSSE() {
+    const token = localStorage.getItem('ems_token');
+    if (!token) return;
+
+    if (sseSource) {
+        sseSource.close();
+    }
+
+    // Connect to SSE stream
+    sseSource = new EventSource(`/api/notifications/subscribe?token=${encodeURIComponent(token)}`);
+
+    sseSource.addEventListener('connect', (event) => {
+        console.log('SSE Connected:', event.data);
+    });
+
+    sseSource.addEventListener('notification', (event) => {
+        const message = event.data;
+        handleIncomingNotification(message);
+    });
+
+    sseSource.onerror = (err) => {
+        console.error('SSE Error, reconnecting...', err);
+    };
+
+    // Toggle Notifications Dropdown
+    const notifBtn = document.getElementById('notifBtn');
+    const notifDropdown = document.getElementById('notifDropdown');
+    const clearNotifBtn = document.getElementById('clearNotifBtn');
+
+    if (notifBtn && notifDropdown) {
+        notifBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notifDropdown.classList.toggle('hidden');
+            // Hide badge dot when viewed
+            document.getElementById('notifDot').classList.add('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!notifDropdown.contains(e.target) && e.target !== notifBtn) {
+                notifDropdown.classList.add('hidden');
+            }
+        });
+    }
+
+    if (clearNotifBtn) {
+        clearNotifBtn.addEventListener('click', () => {
+            const list = document.getElementById('notifList');
+            if (list) {
+                list.innerHTML = '<li class="empty-notif">No new notifications</li>';
+            }
+            document.getElementById('notifDot').classList.add('hidden');
+        });
+    }
+}
+
+function handleIncomingNotification(message) {
+    // 1. Show Toast
+    showToast(message, 'info');
+
+    // 2. Add to notification dropdown list
+    const list = document.getElementById('notifList');
+    if (list) {
+        const empty = list.querySelector('.empty-notif');
+        if (empty) empty.remove();
+
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const li = document.createElement('li');
+        li.className = 'notif-item';
+        li.innerHTML = `
+            <div class="notif-item-text">${message}</div>
+            <div class="notif-item-time">${time}</div>
+        `;
+        list.insertBefore(li, list.firstChild);
+        
+        // Keep last 20 notifications only
+        while (list.children.length > 20) {
+            list.lastChild.remove();
+        }
+    }
+
+    // 3. Show badge dot
+    const notifDot = document.getElementById('notifDot');
+    if (notifDot) {
+        notifDot.classList.remove('hidden');
+    }
+
+    // 4. Trigger Real-Time Re-fetch depending on active view
+    const activeSection = document.querySelector('.content-section.active');
+    if (activeSection) {
+        const id = activeSection.id;
+        console.log('Real-Time UI Re-fetching for active section:', id);
+        if (id === 'sectionDashboard') {
+            loadDashboard();
+        } else if (id === 'sectionEmployees') {
+            loadEmployees();
+        } else if (id === 'sectionLeaves') {
+            loadLeaves();
+        } else if (id === 'sectionChangeRequests') {
+            loadChangeRequests();
+        } else if (id === 'sectionExpenses') {
+            loadExpenses();
+        } else if (id === 'sectionPayroll') {
+            loadPayroll();
+        } else if (id === 'sectionAttendance') {
+            loadAttendance();
+        }
+    }
+}
 

@@ -26,6 +26,9 @@ public class AttendanceService {
     @Autowired
     private AuditLogService auditLogService;
 
+    @Autowired
+    private NotificationService notificationService;
+
     @Transactional
     public Attendance checkIn(Long employeeId, String username) {
         Employee employee = employeeRepository.findById(employeeId)
@@ -66,6 +69,7 @@ public class AttendanceService {
 
         Attendance saved = attendanceRepository.save(attendance);
         auditLogService.log("ATTENDANCE_CHECKIN", username, "Checked in at " + now + " (ID: " + saved.getId() + ")");
+        notificationService.sendNotification(employee.getFirstName() + " " + employee.getLastName() + " checked in (" + saved.getStatus() + ").");
         return saved;
     }
 
@@ -103,6 +107,7 @@ public class AttendanceService {
 
         Attendance saved = attendanceRepository.save(attendance);
         auditLogService.log("ATTENDANCE_CHECKOUT", username, "Checked out at " + now + " (ID: " + saved.getId() + ")");
+        notificationService.sendNotification(saved.getEmployee().getFirstName() + " " + saved.getEmployee().getLastName() + " checked out.");
         return saved;
     }
 

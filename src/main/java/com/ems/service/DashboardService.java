@@ -24,6 +24,15 @@ public class DashboardService {
     @Autowired
     private AuditLogRepository auditLogRepository;
 
+    @Autowired
+    private PayrollRepository payrollRepository;
+
+    @Autowired
+    private ProfileChangeRequestRepository profileChangeRequestRepository;
+
+    @Autowired
+    private ExpenseClaimRepository expenseClaimRepository;
+
     @Transactional(readOnly = true)
     public Map<String, Object> getDashboardStats() {
         Map<String, Object> stats = new HashMap<>();
@@ -64,6 +73,20 @@ public class DashboardService {
 
         // 4. Recent activity (top 5 audit logs)
         stats.put("recentActivity", auditLogRepository.findAllByOrderByTimestampDesc().stream().limit(6).collect(Collectors.toList()));
+
+        // 5. Pending profile changes
+        long pendingProfileRequests = profileChangeRequestRepository.findByStatus("PENDING").size();
+        stats.put("pendingProfileRequests", pendingProfileRequests);
+
+        // 6. Pending expense claims
+        long pendingExpenseClaims = expenseClaimRepository.findByStatus("PENDING").size();
+        stats.put("pendingExpenseClaims", pendingExpenseClaims);
+
+        // 7. Current month payroll net total
+        String currentPeriod = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM"));
+        List<com.ems.entity.Payroll> currentPayroll = payrollRepository.findByPayPeriod(currentPeriod);
+        double totalPayroll = currentPayroll.stream().mapToDouble(com.ems.entity.Payroll::getNetSalary).sum();
+        stats.put("totalMonthlyPayroll", Math.round(totalPayroll * 100.0) / 100.0);
 
         return stats;
     }

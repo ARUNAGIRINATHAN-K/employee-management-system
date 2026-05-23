@@ -35,6 +35,9 @@ public class PayrollService {
     @Autowired
     private ExpenseClaimRepository expenseClaimRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     @Transactional(readOnly = true)
     public List<Payroll> getPayrollHistory(Long employeeId) {
         return payrollRepository.findByEmployeeId(employeeId);
@@ -104,6 +107,7 @@ public class PayrollService {
 
         auditLogService.log("PAYROLL_GENERATE", adminUsername, 
                 "Generated payroll for " + employee.getFirstName() + " " + employee.getLastName() + " (Period: " + payPeriod + ") with " + approvedClaims.size() + " claims worth $" + expenseSum);
+        notificationService.sendNotification("Payroll generated for " + employee.getFirstName() + " " + employee.getLastName() + " for period " + payPeriod + ".");
         return saved;
     }
 
@@ -122,6 +126,7 @@ public class PayrollService {
 
         auditLogService.log("PAYROLL_PAY", adminUsername, 
                 "Marked payroll ID: " + payrollId + " as PAID for " + payroll.getEmployee().getFirstName());
+        notificationService.sendNotification("Payroll of $" + payroll.getNetSalary() + " for period " + payroll.getPayPeriod() + " has been marked as PAID for " + payroll.getEmployee().getFirstName() + " " + payroll.getEmployee().getLastName() + ".");
         return saved;
     }
 

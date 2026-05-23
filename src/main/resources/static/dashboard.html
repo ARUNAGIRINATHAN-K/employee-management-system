@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="EMS Dashboard - Manage employees, departments, leaves, attendance, payroll and performance">
     <title>EMS - Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
@@ -18,46 +19,46 @@
         <!-- ======== SIDEBAR ======== -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <div class="sidebar-logo">⚡</div>
+                <div class="sidebar-logo"><i class="fa-solid fa-bolt"></i></div>
                 <h2>EMS Portal</h2>
             </div>
             <nav class="sidebar-nav">
                 <div class="nav-section">
                     <div class="nav-section-title">Main</div>
                     <div class="nav-item active" data-section="dashboard" id="navDashboard">
-                        <span class="nav-icon">📊</span> Dashboard
+                        <span class="nav-icon"><i class="fa-solid fa-chart-simple"></i></span> Dashboard
                     </div>
                     <div class="nav-item" data-section="employees" id="navEmployees">
-                        <span class="nav-icon">👥</span> Employees
+                        <span class="nav-icon"><i class="fa-solid fa-users"></i></span> Employees
                     </div>
                     <div class="nav-item" data-section="departments" id="navDepartments">
-                        <span class="nav-icon">🏢</span> Departments
+                        <span class="nav-icon"><i class="fa-solid fa-building"></i></span> Departments
                     </div>
                     <div class="nav-item" data-section="profile" id="navProfile">
-                        <span class="nav-icon">👤</span> My Profile
+                        <span class="nav-icon"><i class="fa-solid fa-user"></i></span> My Profile
                     </div>
                 </div>
                 <div class="nav-section">
                     <div class="nav-section-title">Management</div>
                     <div class="nav-item" data-section="leaves" id="navLeaves">
-                        <span class="nav-icon">🏖️</span> Leave Management
+                        <span class="nav-icon"><i class="fa-solid fa-calendar-minus"></i></span> Leave Management
                         <span class="nav-badge hidden" id="pendingLeavesBadge">0</span>
                     </div>
                     <div class="nav-item" data-section="changeRequests" id="navChangeRequests">
-                        <span class="nav-icon">📝</span> Change Requests
+                        <span class="nav-icon"><i class="fa-solid fa-file-signature"></i></span> Change Requests
                         <span class="nav-badge hidden" id="pendingChangesBadge">0</span>
                     </div>
                     <div class="nav-item" data-section="attendance" id="navAttendance">
-                        <span class="nav-icon">⏱️</span> Attendance
+                        <span class="nav-icon"><i class="fa-solid fa-clock"></i></span> Attendance
                     </div>
                     <div class="nav-item" data-section="payroll" id="navPayroll">
-                        <span class="nav-icon">💰</span> Payroll
+                        <span class="nav-icon"><i class="fa-solid fa-wallet"></i></span> Payroll
                     </div>
                     <div class="nav-item" data-section="expenses" id="navExpenses">
-                        <span class="nav-icon">💵</span> Expenses
+                        <span class="nav-icon"><i class="fa-solid fa-file-invoice-dollar"></i></span> Expenses
                     </div>
                     <div class="nav-item" data-section="performance" id="navPerformance">
-                        <span class="nav-icon">⭐</span> Performance
+                        <span class="nav-icon"><i class="fa-solid fa-star"></i></span> Performance
                     </div>
                 </div>
             </nav>
@@ -70,8 +71,8 @@
                     </div>
                 </div>
                 <div style="display:flex;gap:8px;margin-top:10px;">
-                    <button class="btn btn-outline btn-sm" id="themeToggle" style="flex:1;" title="Toggle Theme">🌙 Theme</button>
-                    <button class="btn btn-outline btn-sm" id="logoutBtn" style="flex:1;color:var(--danger);" title="Logout">🚪 Logout</button>
+                    <button class="btn btn-outline btn-sm" id="themeToggle" style="flex:1;" title="Toggle Theme"><i class="fa-solid fa-moon"></i> Theme</button>
+                    <button class="btn btn-outline btn-sm" id="logoutBtn" style="flex:1;color:var(--danger);" title="Logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
                 </div>
             </div>
         </aside>
@@ -83,10 +84,20 @@
                     <button class="header-btn" id="menuToggle" style="display:none;">☰</button>
                     <h1 class="page-title" id="pageTitle">Dashboard</h1>
                 </div>
-                <div class="header-right">
+                <div class="header-right" style="position: relative;">
                     <button class="header-btn" id="notifBtn" title="Notifications">
-                        🔔 <span class="badge-dot hidden" id="notifDot"></span>
+                        <i class="fa-solid fa-bell"></i> <span class="badge-dot hidden" id="notifDot"></span>
                     </button>
+                    <!-- Notifications Dropdown Panel -->
+                    <div class="notif-dropdown hidden" id="notifDropdown">
+                        <div class="notif-header">
+                            <h4>Real-Time Alerts</h4>
+                            <button class="btn-clear" id="clearNotifBtn">Clear</button>
+                        </div>
+                        <ul class="notif-list" id="notifList">
+                            <li class="empty-notif">No new notifications</li>
+                        </ul>
+                    </div>
                 </div>
             </header>
 
@@ -121,10 +132,10 @@
                             </div>
                         </div>
                         <div class="toolbar-right">
-                            <button class="btn btn-outline btn-sm" id="manageShiftsBtn" style="display:none;margin-right:8px;">⚙️ Shifts</button>
-                            <button class="btn btn-outline btn-sm" id="exportExcelBtn">📥 Excel</button>
-                            <button class="btn btn-outline btn-sm" id="exportPdfBtn">📄 PDF</button>
-                            <button class="btn btn-primary btn-sm" id="addEmployeeBtn">➕ Add Employee</button>
+                            <button class="btn btn-outline btn-sm" id="manageShiftsBtn" style="display:none;margin-right:8px;"><i class="fa-solid fa-user-clock"></i> Shifts</button>
+                            <button class="btn btn-outline btn-sm" id="exportExcelBtn"><i class="fa-solid fa-file-excel"></i> Excel</button>
+                            <button class="btn btn-outline btn-sm" id="exportPdfBtn"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+                            <button class="btn btn-primary btn-sm" id="addEmployeeBtn"><i class="fa-solid fa-user-plus"></i> Add Employee</button>
                         </div>
                     </div>
                     <div class="card">
@@ -132,13 +143,13 @@
                             <table class="data-table" id="employeeTable">
                                 <thead>
                                     <tr>
-                                        <th data-sort="id">ID ↕</th>
-                                        <th data-sort="firstName">Employee ↕</th>
-                                        <th data-sort="email">Email ↕</th>
+                                        <th data-sort="id">ID <i class="fa-solid fa-sort"></i></th>
+                                        <th data-sort="firstName">Employee <i class="fa-solid fa-sort"></i></th>
+                                        <th data-sort="email">Email <i class="fa-solid fa-sort"></i></th>
                                         <th>Phone</th>
-                                        <th data-sort="jobTitle">Job Title ↕</th>
+                                        <th data-sort="jobTitle">Job Title <i class="fa-solid fa-sort"></i></th>
                                         <th>Department</th>
-                                        <th data-sort="salary">Salary ↕</th>
+                                        <th data-sort="salary">Salary <i class="fa-solid fa-sort"></i></th>
                                         <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
@@ -155,7 +166,7 @@
                     <div class="toolbar">
                         <div class="toolbar-left"><h3 style="font-weight:600;">All Departments</h3></div>
                         <div class="toolbar-right">
-                            <button class="btn btn-primary btn-sm" id="addDeptBtn">➕ Add Department</button>
+                            <button class="btn btn-primary btn-sm" id="addDeptBtn"><i class="fa-solid fa-plus"></i> Add Department</button>
                         </div>
                     </div>
                     <div class="stats-grid" id="deptGrid"></div>
@@ -167,8 +178,8 @@
                     <div class="toolbar">
                         <div class="toolbar-left"><h3 style="font-weight:600;">Leave History</h3></div>
                         <div class="toolbar-right">
-                            <button class="btn btn-outline btn-sm" id="accrueLeavesBtn" style="display:none;">⏳ Accrue Leaves</button>
-                            <button class="btn btn-primary btn-sm" id="applyLeaveBtn">✈️ Apply Leave</button>
+                            <button class="btn btn-outline btn-sm" id="accrueLeavesBtn" style="display:none;"><i class="fa-solid fa-hourglass-start"></i> Accrue Leaves</button>
+                            <button class="btn btn-primary btn-sm" id="applyLeaveBtn"><i class="fa-solid fa-plane"></i> Apply Leave</button>
                         </div>
                     </div>
                     <div class="card">
@@ -199,15 +210,15 @@
                 <!-- ======== ATTENDANCE SECTION ======== -->
                 <section class="content-section" id="sectionAttendance">
                     <div class="attendance-status-card" id="attendanceStatusCard">
-                        <div class="status-icon" style="background:var(--info-light);color:var(--info);">⏱️</div>
+                        <div class="status-icon" style="background:var(--info-light);color:var(--info);"><i class="fa-solid fa-clock"></i></div>
                         <div>
                             <strong id="attendanceStatusText">Loading...</strong>
                             <p class="text-muted text-sm" id="attendanceTimeText"></p>
                         </div>
                     </div>
                     <div class="attendance-actions" id="attendanceActions">
-                        <button class="btn btn-success" id="checkInBtn">☀️ Check In</button>
-                        <button class="btn btn-warning" id="checkOutBtn">🌙 Check Out</button>
+                        <button class="btn btn-success" id="checkInBtn"><i class="fa-solid fa-sun"></i> Check In</button>
+                        <button class="btn btn-warning" id="checkOutBtn"><i class="fa-solid fa-moon"></i> Check Out</button>
                     </div>
                     <div class="card">
                         <div class="card-header"><h3>Attendance History</h3></div>
@@ -227,7 +238,7 @@
                     <div class="toolbar">
                         <div class="toolbar-left"><h3 style="font-weight:600;">Payroll Records</h3></div>
                         <div class="toolbar-right">
-                            <button class="btn btn-primary btn-sm" id="generatePayrollBtn">💳 Generate Payroll</button>
+                            <button class="btn btn-primary btn-sm" id="generatePayrollBtn"><i class="fa-solid fa-credit-card"></i> Generate Payroll</button>
                         </div>
                     </div>
                     <div class="card">
@@ -247,7 +258,7 @@
                     <div class="toolbar">
                         <div class="toolbar-left"><h3 style="font-weight:600;">Performance Reviews</h3></div>
                         <div class="toolbar-right">
-                            <button class="btn btn-primary btn-sm" id="addReviewBtn">⭐ Add Review</button>
+                            <button class="btn btn-primary btn-sm" id="addReviewBtn"><i class="fa-solid fa-star"></i> Add Review</button>
                         </div>
                     </div>
                     <div class="card">
@@ -271,7 +282,7 @@
                             </div>
                             <h3 id="profileName" style="font-weight:600;margin-bottom:8px;">User Name</h3>
                             <p id="profileJobTitle" class="text-muted" style="margin-bottom:16px;">Job Title</p>
-                            <button class="btn btn-primary btn-sm" id="editProfileBtn">✏️ Request Profile Edit</button>
+                            <button class="btn btn-primary btn-sm" id="editProfileBtn"><i class="fa-solid fa-pen-to-square"></i> Request Profile Edit</button>
                         </div>
                         <div class="card">
                             <div class="card-header"><h3>Profile Information</h3></div>
@@ -320,7 +331,7 @@
                     <div class="toolbar">
                         <div class="toolbar-left"><h3 style="font-weight:600;">Expense Claims</h3></div>
                         <div class="toolbar-right">
-                            <button class="btn btn-primary btn-sm" id="submitExpenseClaimBtn">💵 Submit Expense Claim</button>
+                            <button class="btn btn-primary btn-sm" id="submitExpenseClaimBtn"><i class="fa-solid fa-file-invoice-dollar"></i> Submit Expense Claim</button>
                         </div>
                     </div>
                     <div class="card" id="myExpensesCard">
@@ -471,10 +482,8 @@
                 <form id="leaveForm">
                     <div class="form-group">
                         <label for="leaveType">Leave Type *</label>
-                        <select class="form-control" id="leaveType">
-                            <option value="CASUAL">Casual Leave</option>
-                            <option value="SICK">Sick Leave</option>
-                            <option value="EARNED">Earned Leave</option>
+                        <select class="form-control" id="leaveType" required>
+                            <option value="">-- Loading --</option>
                         </select>
                     </div>
                     <div class="form-row">

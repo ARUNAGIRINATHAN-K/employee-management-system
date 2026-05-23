@@ -33,6 +33,9 @@ public class LeaveService {
     @Autowired
     private AuditLogService auditLogService;
 
+    @Autowired
+    private NotificationService notificationService;
+
     @Transactional(readOnly = true)
     public List<Leave> getAllLeaves() {
         return leaveRepository.findAll();
@@ -80,6 +83,7 @@ public class LeaveService {
 
         auditLogService.log("APPLY_LEAVE", requesterUsername, 
                 "Applied for " + requestedDays + " days of " + leave.getLeaveType() + " leave (ID: " + saved.getId() + ")");
+        notificationService.sendNotification("New leave application submitted by " + employee.getFirstName() + " " + employee.getLastName());
         return saved;
     }
 
@@ -119,6 +123,7 @@ public class LeaveService {
 
         auditLogService.log("PROCESS_LEAVE", managerUsername, 
                 "Leave application ID: " + leaveId + " was " + status.toUpperCase() + " by manager");
+        notificationService.sendNotification("Leave request #" + leaveId + " has been " + status.toUpperCase() + " for " + leave.getEmployee().getFirstName() + " " + leave.getEmployee().getLastName() + ".");
         return updated;
     }
 
@@ -152,6 +157,7 @@ public class LeaveService {
             }
         }
         auditLogService.log("LEAVE_ACCRUAL", runBy, "Triggered leave accrual for active employees using leave policies.");
+        notificationService.sendNotification("Manual leave accrual has been processed for active employees.");
     }
 
     private void accrueType(Employee employee, String leaveType, double amount) {
@@ -199,6 +205,7 @@ public class LeaveService {
         auditLogService.log("LEAVE_POLICY_UPDATE", adminUsername,
                 "Updated leave policy for " + policy.getLeaveType() + 
                 " (Annual: " + policy.getAnnualAllocation() + ", Monthly: " + policy.getMonthlyAccrualRate() + ")");
+        notificationService.sendNotification("Leave policy for " + policy.getLeaveType() + " has been updated.");
         return updated;
     }
 }
