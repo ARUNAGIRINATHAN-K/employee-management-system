@@ -9,4 +9,7 @@ import java.util.List;
 public interface ProfileChangeRequestRepository extends JpaRepository<ProfileChangeRequest, Long> {
     List<ProfileChangeRequest> findByEmployeeId(Long employeeId);
     List<ProfileChangeRequest> findByStatus(String status);
+
+    @Query("SELECT p FROM ProfileChangeRequest p WHERE p.employee.department.id = :deptId")
+    List<ProfileChangeRequest> findByEmployeeDepartmentId(@Param("deptId") Long deptId);
 }

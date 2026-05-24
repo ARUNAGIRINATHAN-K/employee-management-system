@@ -117,6 +117,7 @@ const API = {
     // ---------- LEAVES ----------
     async getAllLeaves() { return this.get('/api/leaves'); },
     async getEmployeeLeaves(empId) { return this.get(`/api/leaves/employee/${empId}`); },
+    async getManagerLeaves(mgrId) { return this.get(`/api/leaves/manager/${mgrId}`); },
     async getLeaveBalances(empId) { return this.get(`/api/leaves/balances/employee/${empId}`); },
     async applyLeave(data) { return this.post('/api/leaves/apply', data); },
     async processLeave(leaveId, status, comments) {

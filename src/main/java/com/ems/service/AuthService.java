@@ -56,7 +56,8 @@ public class AuthService {
                 userPrincipal.getUsername(),
                 userPrincipal.getRole(),
                 userPrincipal.getId(),
-                userPrincipal.getUser().getEmployee() != null ? userPrincipal.getUser().getEmployee().getId() : null
+            userPrincipal.getUser().getEmployee() != null ? userPrincipal.getUser().getEmployee().getId() : null,
+            userPrincipal.getDepartmentId()
         );
     }
 

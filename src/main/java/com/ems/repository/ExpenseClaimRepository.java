@@ -21,4 +21,7 @@ public interface ExpenseClaimRepository extends JpaRepository<ExpenseClaim, Long
                                       @Param("status") String status,
                                       @Param("startDate") LocalDate startDate,
                                       @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT ec FROM ExpenseClaim ec WHERE ec.employee.department.id = :deptId")
+    List<ExpenseClaim> findByEmployeeDepartmentId(@Param("deptId") Long deptId);
 }

@@ -20,6 +20,7 @@ public class JwtUtils {
     public String generateJwtToken(Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         Long employeeId = null;
+        Long departmentId = userPrincipal.getDepartmentId();
         if (userPrincipal.getUser().getEmployee() != null) {
             employeeId = userPrincipal.getUser().getEmployee().getId();
         }
@@ -28,6 +29,7 @@ public class JwtUtils {
                 .claim("role", userPrincipal.getRole())
                 .claim("userId", userPrincipal.getId())
                 .claim("employeeId", employeeId)
+                .claim("departmentId", departmentId)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(key, SignatureAlgorithm.HS256)

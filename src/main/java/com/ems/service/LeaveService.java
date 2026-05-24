@@ -9,6 +9,10 @@ import com.ems.repository.LeaveBalanceRepository;
 import com.ems.repository.LeaveRepository;
 import com.ems.repository.LeavePolicyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
+
+import com.ems.repository.UserRepository;
+import com.ems.entity.User;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +30,9 @@ public class LeaveService {
 
     @Autowired
     private EmployeeRepository employeeRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private LeavePolicyRepository leavePolicyRepository;
@@ -48,7 +55,18 @@ public class LeaveService {
 
     @Transactional(readOnly = true)
     public List<Leave> getLeavesForManager(Long managerId) {
-        return leaveRepository.findByManagerId(managerId);
+        List<Leave> leaves = leaveRepository.findByManagerId(managerId);
+        // Also include leaves for employees in the manager's department
+        Employee manager = employeeRepository.findById(managerId).orElse(null);
+        if (manager != null && manager.getDepartment() != null) {
+            Long deptId = manager.getDepartment().getId();
+            List<Leave> deptLeaves = leaveRepository.findByEmployeeDepartmentId(deptId);
+            // merge without duplicates
+            for (Leave l : deptLeaves) {
+                if (!leaves.contains(l)) leaves.add(l);
+            }
+        }
+        return leaves;
     }
 
     @Transactional
@@ -99,6 +117,22 @@ public class LeaveService {
         Employee manager = employeeRepository.findByStatusNot("DELETED").stream()
                 .filter(e -> e.getEmail().equalsIgnoreCase(managerUsername))
                 .findFirst().orElse(null);
+
+        // Security: only HR or managers of the same department may approve/reject
+        User acting = userRepository.findByUsername(managerUsername).orElse(null);
+        boolean isHr = acting != null && "ROLE_HR".equals(acting.getRole());
+        if (!isHr) {
+            // if not HR, must be manager and belong to same department
+            if (manager == null) {
+                throw new AccessDeniedException("You are not authorized to process this leave request");
+            }
+            Long managerDeptId = manager.getDepartment() != null ? manager.getDepartment().getId() : null;
+            Long employeeDeptId = leave.getEmployee() != null && leave.getEmployee().getDepartment() != null
+                    ? leave.getEmployee().getDepartment().getId() : null;
+            if (managerDeptId == null || employeeDeptId == null || !managerDeptId.equals(employeeDeptId)) {
+                throw new AccessDeniedException("Managers may only process leave requests for employees in their own department");
+            }
+        }
 
         long requestedDays = ChronoUnit.DAYS.between(leave.getStartDate(), leave.getEndDate()) + 1;
 

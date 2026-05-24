@@ -23,16 +23,19 @@ public class DepartmentController {
     private EmployeeRepository employeeRepository;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('ROLE_HR')")
     public ResponseEntity<List<Department>> getAllDepartments() {
         return ResponseEntity.ok(departmentService.getAllDepartments());
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_HR')")
     public ResponseEntity<Department> getDepartmentById(@PathVariable Long id) {
         return ResponseEntity.ok(departmentService.getDepartmentById(id));
     }
 
     @GetMapping("/{id}/employees")
+    @PreAuthorize("hasAuthority('ROLE_HR')")
     public ResponseEntity<List<Employee>> getDepartmentEmployees(@PathVariable Long id) {
         return ResponseEntity.ok(employeeRepository.findByDepartmentIdAndStatusNot(id, "DELETED"));
     }
@@ -74,7 +77,7 @@ public class DepartmentController {
     }
 
     @PostMapping("/{id}/assign")
-    @PreAuthorize("hasAnyAuthority('ROLE_HR', 'ROLE_MANAGER')")
+    @PreAuthorize("hasAuthority('ROLE_HR')")
     public ResponseEntity<?> assignEmployees(@PathVariable Long id, @RequestBody List<Long> employeeIds) {
         try {
             String adminUsername = SecurityContextHolder.getContext().getAuthentication().getName();

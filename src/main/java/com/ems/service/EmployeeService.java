@@ -19,6 +19,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -49,12 +52,15 @@ public class EmployeeService {
     private String uploadDir;
 
     @Transactional(readOnly = true)
-    public Page<Employee> getAllEmployees(String search, int page, int size, String sortBy, String sortDir) {
+    public Page<Employee> getAllEmployees(String search, int page, int size, String sortBy, String sortDir, Long departmentId) {
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
         if (search != null && !search.trim().isEmpty()) {
-            return employeeRepository.searchEmployees(search, pageable);
+            return employeeRepository.searchEmployees(search, departmentId, pageable);
+        }
+        if (departmentId != null) {
+            return employeeRepository.findByDepartmentIdAndStatusNot(departmentId, "DELETED", pageable);
         }
         return employeeRepository.findByStatusNot("DELETED", pageable);
     }
@@ -65,15 +71,28 @@ public class EmployeeService {
                 .orElseThrow(() -> new RuntimeException("Employee not found with id: " + id));
     }
 
+    @Transactional(readOnly = true)
+    public Employee getEmployeeByIdScoped(Long id, Long departmentId) {
+        Employee employee = getEmployeeById(id);
+        if (departmentId != null) {
+            Long employeeDepartmentId = employee.getDepartment() != null ? employee.getDepartment().getId() : null;
+            if (employeeDepartmentId == null || !departmentId.equals(employeeDepartmentId)) {
+                throw new AccessDeniedException("You may only view employees in your own department");
+            }
+        }
+        return employee;
+    }
+
     @Transactional
     public Employee createEmployee(Employee employee, String adminUsername) {
-        if (employee.getEmail() != null && employeeRepository.searchEmployees(employee.getEmail(), PageRequest.of(0, 1)).getTotalElements() > 0) {
-            // Check unique email among active employees
-            List<Employee> existing = employeeRepository.findByStatusNot("DELETED");
-            boolean emailExists = existing.stream().anyMatch(e -> e.getEmail().equalsIgnoreCase(employee.getEmail()));
-            if (emailExists) {
-                throw new RuntimeException("An active employee with email " + employee.getEmail() + " already exists.");
-            }
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isHr = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_HR".equals(a.getAuthority()));
+        if (!isHr) {
+            throw new AccessDeniedException("Only HR Admins may create employees");
+        }
+        if (employee.getEmail() != null && employeeRepository.existsByEmailIgnoreCaseAndStatusNot(employee.getEmail(), "DELETED")) {
+            throw new RuntimeException("An active employee with email " + employee.getEmail() + " already exists.");
         }
         
         Employee saved = employeeRepository.save(employee);
@@ -147,8 +166,10 @@ public class EmployeeService {
         return updated;
     }
 
-    public byte[] exportToExcel() throws IOException {
-        List<Employee> employees = employeeRepository.findByStatusNot("DELETED");
+    public byte[] exportToExcel(Long departmentId) throws IOException {
+        List<Employee> employees = departmentId != null
+                ? employeeRepository.findByDepartmentIdAndStatusNot(departmentId, "DELETED")
+                : employeeRepository.findByStatusNot("DELETED");
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("Employees");
 
@@ -193,8 +214,10 @@ public class EmployeeService {
         }
     }
 
-    public byte[] exportToPdf() {
-        List<Employee> employees = employeeRepository.findByStatusNot("DELETED");
+    public byte[] exportToPdf(Long departmentId) {
+        List<Employee> employees = departmentId != null
+                ? employeeRepository.findByDepartmentIdAndStatusNot(departmentId, "DELETED")
+                : employeeRepository.findByStatusNot("DELETED");
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Document document = new Document(PageSize.A4.rotate()); // Landscape for wide tables
             PdfWriter.getInstance(document, out);

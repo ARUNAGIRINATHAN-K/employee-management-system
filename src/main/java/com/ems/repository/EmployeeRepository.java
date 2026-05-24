@@ -17,16 +17,21 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     List<Employee> findByStatusNot(String status);
 
     @Query("SELECT e FROM Employee e WHERE e.status <> 'DELETED' AND " +
+            "(:departmentId IS NULL OR e.department.id = :departmentId) AND " +
            "(LOWER(e.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            " LOWER(e.lastName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            " LOWER(e.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            " LOWER(e.jobTitle) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            " LOWER(e.department.name) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<Employee> searchEmployees(@Param("search") String search, Pageable pageable);
+        Page<Employee> searchEmployees(@Param("search") String search, @Param("departmentId") Long departmentId, Pageable pageable);
+
+        Page<Employee> findByDepartmentIdAndStatusNot(Long departmentId, String status, Pageable pageable);
 
     List<Employee> findByDepartmentIdAndStatusNot(Long departmentId, String status);
 
     List<Employee> findByManagerIdAndStatusNot(Long managerId, String status);
+
+        boolean existsByEmailIgnoreCaseAndStatusNot(String email, String status);
     
     long countByStatus(String status);
     

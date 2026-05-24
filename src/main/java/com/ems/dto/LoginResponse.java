@@ -6,15 +6,17 @@ public class LoginResponse {
     private String role;
     private Long userId;
     private Long employeeId;
+    private Long departmentId;
 
     public LoginResponse() {}
 
-    public LoginResponse(String token, String username, String role, Long userId, Long employeeId) {
+    public LoginResponse(String token, String username, String role, Long userId, Long employeeId, Long departmentId) {
         this.token = token;
         this.username = username;
         this.role = role;
         this.userId = userId;
         this.employeeId = employeeId;
+        this.departmentId = departmentId;
     }
 
     public String getToken() {
@@ -55,5 +57,13 @@ public class LoginResponse {
 
     public void setEmployeeId(Long employeeId) {
         this.employeeId = employeeId;
+    }
+
+    public Long getDepartmentId() {
+        return departmentId;
+    }
+
+    public void setDepartmentId(Long departmentId) {
+        this.departmentId = departmentId;
     }
 }

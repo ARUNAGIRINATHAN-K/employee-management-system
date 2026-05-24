@@ -68,23 +68,43 @@ function applyRolePermissions() {
             const el = document.getElementById(id);
             if (el) el.style.display = 'none';
         });
-        document.getElementById('addEmployeeBtn').style.display = 'none';
+        const addEmployeeBtn = document.getElementById('addEmployeeBtn');
+        if (addEmployeeBtn) addEmployeeBtn.style.display = 'none';
         document.getElementById('exportExcelBtn').style.display = 'none';
         document.getElementById('exportPdfBtn').style.display = 'none';
         document.getElementById('generatePayrollBtn').style.display = 'none';
         document.getElementById('addReviewBtn').style.display = 'none';
+        const addDeptBtn = document.getElementById('addDeptBtn');
+        if (addDeptBtn) addDeptBtn.style.display = 'none';
         // Navigate to profile by default
         navigateTo('profile');
     }
     if (role === 'ROLE_MANAGER') {
-        document.getElementById('generatePayrollBtn').style.display = 'none';
+        const genPayroll = document.getElementById('generatePayrollBtn');
+        if (genPayroll) genPayroll.style.display = 'none';
         const hrOnly = ['navChangeRequests'];
         hrOnly.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = 'none';
         });
+        const addEmployeeBtn = document.getElementById('addEmployeeBtn');
+        if (addEmployeeBtn) addEmployeeBtn.style.display = 'none';
+        const addDeptBtn = document.getElementById('addDeptBtn');
+        if (addDeptBtn) addDeptBtn.style.display = 'none';
         const managerExpensesCard = document.getElementById('managerExpensesCard');
         if (managerExpensesCard) managerExpensesCard.style.display = 'block';
+    }
+
+    // Managers should not see the Departments tab; Employees should not see Employees or Departments
+    if (role === 'ROLE_MANAGER') {
+        const navDept = document.getElementById('navDepartments');
+        if (navDept) navDept.style.display = 'none';
+    }
+    if (role === 'ROLE_EMPLOYEE') {
+        const navEmp = document.getElementById('navEmployees');
+        const navDept = document.getElementById('navDepartments');
+        if (navEmp) navEmp.style.display = 'none';
+        if (navDept) navDept.style.display = 'none';
     }
     if (role === 'ROLE_HR') {
         const accrueBtn = document.getElementById('accrueLeavesBtn');
@@ -743,6 +763,9 @@ async function loadLeaves() {
         let res;
         if (currentUser.role === 'ROLE_HR') {
             res = await API.getAllLeaves();
+        } else if (currentUser.role === 'ROLE_MANAGER' && empId) {
+            // load leaves for employees under this manager (including department)
+            res = await API.getManagerLeaves(empId);
         } else if (empId) {
             res = await API.getEmployeeLeaves(empId);
         }

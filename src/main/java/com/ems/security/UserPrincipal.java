@@ -13,6 +13,7 @@ public class UserPrincipal implements UserDetails {
     private final String username;
     private final String password;
     private final String role;
+    private final Long departmentId;
     private final User user;
 
     public UserPrincipal(User user) {
@@ -20,6 +21,9 @@ public class UserPrincipal implements UserDetails {
         this.username = user.getUsername();
         this.password = user.getPassword();
         this.role = user.getRole();
+        this.departmentId = user.getEmployee() != null && user.getEmployee().getDepartment() != null
+            ? user.getEmployee().getDepartment().getId()
+            : null;
         this.user = user;
     }
 
@@ -29,6 +33,10 @@ public class UserPrincipal implements UserDetails {
 
     public String getRole() {
         return role;
+    }
+
+    public Long getDepartmentId() {
+        return departmentId;
     }
 
     public User getUser() {
