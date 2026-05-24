@@ -13,7 +13,7 @@ The Employee Management System (EMS) is designed to streamline day-to-day organi
 ## Tech Stack
 
 *   **Backend:** Java 26, Spring Boot 3.3, Spring Security, Spring Data JPA.
-*   **Database:** MySQL (run locally or via XAMPP).
+*   **Database:** Embedded H2 for local development, with MySQL configuration still available for external deployments.
 *   **Frontend:** Vanilla HTML5, CSS3 (Glassmorphism layout, CSS variables for dark/light themes), and vanilla JavaScript.
 *   **Reporting:** Apache POI (Excel export), OpenPDF (Payslip and directory PDF reports).
 
@@ -80,16 +80,12 @@ employee-management-system/
 ### Prerequisites
 *   Java JDK 26
 *   Maven 3.x
-*   MySQL Server (port 3306)
+*   No local database server is required for the default dev run.
 
 ### Installation
-1.  Configure the database credentials in [application.properties](file:///a:/My%20project/employee-management-system/src/main/resources/application.properties):
-    ```properties
-    spring.datasource.url=jdbc:mysql://localhost:3306/ems_db?createDatabaseIfNotExist=true
-    spring.datasource.username=root
-    spring.datasource.password=yourpassword
-    ```
-2.  Seed initial database values. The seeder is automated and runs on first launch to create shifts, departments, administrators, and leave policies.
+1.  Start the app directly with the embedded H2 database configured in [application.properties](src/main/resources/application.properties).
+2.  If you want to use MySQL instead, change the datasource settings in [application.properties](src/main/resources/application.properties) before starting the app.
+3.  Seed initial database values. The seeder is automated and runs on first launch to create shifts, departments, administrators, and leave policies.
 
 ### Run Tests
 To verify code changes and run tests, execute:
@@ -102,6 +98,21 @@ Launch the Spring Boot development server:
 ```cmd
 ./mvnw.cmd spring-boot:run
 ```
+The application will be accessible at: **[http://localhost:8080](http://localhost:8080)**.
+The embedded H2 console is available at **[/h2-console](http://localhost:8080/h2-console)**.
+
+### Run In Docker
+Build the image and start the container:
+```cmd
+docker build -t employee-management:local .
+docker run --rm -p 8080:8080 -v %cd%\uploads:/app/uploads employee-management:local
+```
+
+Or use Docker Compose:
+```cmd
+docker-compose up --build
+```
+
 The application will be accessible at: **[http://localhost:8080](http://localhost:8080)**.
 
 ### Seeding Credentials
