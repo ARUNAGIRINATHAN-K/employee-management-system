@@ -23,6 +23,9 @@ public class ExpenseClaimController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private com.ems.repository.EmployeeRepository employeeRepository;
+
     @GetMapping
     @PreAuthorize("hasAuthority('ROLE_HR')")
     public ResponseEntity<List<ExpenseClaim>> getAllClaims() {
@@ -45,7 +48,16 @@ public class ExpenseClaimController {
             boolean isOwner = employee.getId().equals(employeeId);
             boolean isHr = "ROLE_HR".equalsIgnoreCase(user.getRole());
             boolean isManager = "ROLE_MANAGER".equalsIgnoreCase(user.getRole());
-            
+
+            if (isManager && !isHr && !isOwner) {
+                // ensure manager is viewing claims for employees in their department
+                var targetEmpOpt = employeeRepository.findById(employeeId);
+                if (targetEmpOpt.isEmpty() || employee.getDepartment() == null || targetEmpOpt.get().getDepartment() == null
+                        || !employee.getDepartment().getId().equals(targetEmpOpt.get().getDepartment().getId())) {
+                    return ResponseEntity.status(403).body(Map.of("message", "Access denied."));
+                }
+            }
+
             if (!isOwner && !isHr && !isManager) {
                 return ResponseEntity.status(403).body(Map.of("message", "Access denied."));
             }

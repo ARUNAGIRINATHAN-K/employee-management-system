@@ -4,6 +4,8 @@ import com.ems.entity.Leave;
 import com.ems.entity.LeaveBalance;
 import com.ems.entity.LeavePolicy;
 import com.ems.service.LeaveService;
+import com.ems.repository.EmployeeRepository;
+import com.ems.security.UserPrincipal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,6 +21,9 @@ public class LeaveController {
     @Autowired
     private LeaveService leaveService;
 
+    @Autowired
+    private EmployeeRepository employeeRepository;
+
     @GetMapping
     @PreAuthorize("hasAuthority('ROLE_HR')")
     public ResponseEntity<List<Leave>> getAllLeaves() {
@@ -27,6 +32,25 @@ public class LeaveController {
 
     @GetMapping("/employee/{employeeId}")
     public ResponseEntity<List<Leave>> getEmployeeLeaves(@PathVariable Long employeeId) {
+        // Allow HR to view any; Managers only for their department; Employees only their own
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof UserPrincipal) {
+            UserPrincipal up = (UserPrincipal) principal;
+            String role = up.getRole();
+            if ("ROLE_EMPLOYEE".equals(role)) {
+                Long myEmpId = up.getUser() != null && up.getUser().getEmployee() != null ? up.getUser().getEmployee().getId() : null;
+                if (myEmpId == null || !myEmpId.equals(employeeId)) {
+                    return ResponseEntity.status(403).build();
+                }
+            } else if ("ROLE_MANAGER".equals(role)) {
+                Long deptId = up.getDepartmentId();
+                if (deptId == null) return ResponseEntity.status(403).build();
+                var empOpt = employeeRepository.findById(employeeId);
+                if (empOpt.isEmpty() || empOpt.get().getDepartment() == null || !deptId.equals(empOpt.get().getDepartment().getId())) {
+                    return ResponseEntity.status(403).build();
+                }
+            }
+        }
         return ResponseEntity.ok(leaveService.getLeavesByEmployee(employeeId));
     }
 
@@ -38,6 +62,24 @@ public class LeaveController {
 
     @GetMapping("/balances/employee/{employeeId}")
     public ResponseEntity<List<LeaveBalance>> getEmployeeLeaveBalances(@PathVariable Long employeeId) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof UserPrincipal) {
+            UserPrincipal up = (UserPrincipal) principal;
+            String role = up.getRole();
+            if ("ROLE_EMPLOYEE".equals(role)) {
+                Long myEmpId = up.getUser() != null && up.getUser().getEmployee() != null ? up.getUser().getEmployee().getId() : null;
+                if (myEmpId == null || !myEmpId.equals(employeeId)) {
+                    return ResponseEntity.status(403).build();
+                }
+            } else if ("ROLE_MANAGER".equals(role)) {
+                Long deptId = up.getDepartmentId();
+                if (deptId == null) return ResponseEntity.status(403).build();
+                var empOpt = employeeRepository.findById(employeeId);
+                if (empOpt.isEmpty() || empOpt.get().getDepartment() == null || !deptId.equals(empOpt.get().getDepartment().getId())) {
+                    return ResponseEntity.status(403).build();
+                }
+            }
+        }
         return ResponseEntity.ok(leaveService.getLeaveBalances(employeeId));
     }
 

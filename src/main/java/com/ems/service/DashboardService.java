@@ -18,6 +18,8 @@ import com.ems.entity.Leave;
 @Service
 public class DashboardService {
 
+        private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(DashboardService.class);
+
     @Autowired
     private EmployeeRepository employeeRepository;
 
@@ -46,20 +48,22 @@ public class DashboardService {
     public Map<String, Object> getDashboardStats() {
         Map<String, Object> stats = new HashMap<>();
 
-                // Determine caller role and scope
-                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-                String username = auth != null ? auth.getName() : null;
-                User actingUser = null;
-                if (username != null) {
-                        actingUser = userRepository.findByUsername(username).orElse(null);
-                }
-                boolean isManager = actingUser != null && "ROLE_MANAGER".equals(actingUser.getRole());
+        try {
+            // Determine caller role and scope
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String username = auth != null ? auth.getName() : null;
+            User actingUser = null;
+            if (username != null) {
+                actingUser = userRepository.findByUsername(username).orElse(null);
+            }
+            boolean isManager = actingUser != null && "ROLE_MANAGER".equals(actingUser.getRole());
 
-                Long scopedDeptId = null;
-                Employee actingEmployee = actingUser != null ? actingUser.getEmployee() : null;
-                if (isManager && actingEmployee != null && actingEmployee.getDepartment() != null) {
-                        scopedDeptId = actingEmployee.getDepartment().getId();
-                }
+            Long tempDeptId = null;
+            Employee actingEmployee = actingUser != null ? actingUser.getEmployee() : null;
+            if (isManager && actingEmployee != null && actingEmployee.getDepartment() != null) {
+                tempDeptId = actingEmployee.getDepartment().getId();
+            }
+            final Long scopedDeptId = tempDeptId;
 
                 // 1. Employee counts (scoped for manager)
                 if (scopedDeptId != null) {
@@ -180,20 +184,41 @@ public class DashboardService {
                 }
                 stats.put("pendingExpenseClaims", pendingExpenseClaims);
 
-                // 7. Current month payroll net total (scoped)
                 String currentPeriod = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM"));
                 double totalPayroll = 0.0;
                 if (scopedDeptId != null) {
                         List<com.ems.entity.Employee> deptEmployees = employeeRepository.findByDepartmentIdAndStatusNot(scopedDeptId, "DELETED");
+                        double sum = 0.0;
                         for (com.ems.entity.Employee e : deptEmployees) {
-                                payrollRepository.findByEmployeeIdAndPayPeriod(e.getId(), currentPeriod).ifPresent(p -> totalPayroll += p.getNetSalary());
+                                java.util.Optional<com.ems.entity.Payroll> p = payrollRepository.findByEmployeeIdAndPayPeriod(e.getId(), currentPeriod);
+                                if (p.isPresent()) {
+                                        sum += p.get().getNetSalary();
+                                }
                         }
+                        totalPayroll = sum;
                 } else {
                         List<com.ems.entity.Payroll> currentPayroll = payrollRepository.findByPayPeriod(currentPeriod);
                         totalPayroll = currentPayroll.stream().mapToDouble(com.ems.entity.Payroll::getNetSalary).sum();
                 }
                 stats.put("totalMonthlyPayroll", Math.round(totalPayroll * 100.0) / 100.0);
 
-        return stats;
+                        return stats;
+                } catch (Exception ex) {
+                        log.error("Error computing dashboard stats", ex);
+                        // Return safe defaults instead of throwing NPEs that cause 500
+                        stats.putIfAbsent("totalEmployees", 0L);
+                        stats.putIfAbsent("activeEmployees", 0L);
+                        stats.putIfAbsent("inactiveEmployees", 0L);
+                        stats.putIfAbsent("totalDepartments", 0L);
+                        stats.putIfAbsent("departmentWiseCounts", Map.of());
+                        stats.putIfAbsent("pendingLeaves", 0L);
+                        stats.putIfAbsent("leaveStats", Map.of());
+                        stats.putIfAbsent("recentActivity", List.of());
+                        stats.putIfAbsent("pendingProfileRequests", 0L);
+                        stats.putIfAbsent("pendingExpenseClaims", 0L);
+                        stats.putIfAbsent("totalMonthlyPayroll", 0.0);
+                        stats.put("error", "Failed to compute dashboard stats - see server logs");
+                        return stats;
+                }
     }
 }

@@ -51,8 +51,8 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Allow static resources & root path
-                .requestMatchers("/", "/index.html", "/dashboard.html", "/css/**", "/js/**", "/uploads/**").permitAll()
+                // Allow static resources & root path (protect pages like dashboard)
+                .requestMatchers("/", "/index.html", "/css/**", "/js/**").permitAll()
                 // Allow authentication APIs
                 .requestMatchers("/api/auth/**").permitAll()
                 // Require authentication for all other APIs

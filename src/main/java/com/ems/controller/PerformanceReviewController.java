@@ -2,6 +2,8 @@ package com.ems.controller;
 
 import com.ems.entity.PerformanceReview;
 import com.ems.service.PerformanceReviewService;
+import com.ems.repository.EmployeeRepository;
+import com.ems.security.UserPrincipal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,8 +19,29 @@ public class PerformanceReviewController {
     @Autowired
     private PerformanceReviewService performanceReviewService;
 
+    @Autowired
+    private EmployeeRepository employeeRepository;
+
     @GetMapping("/employee/{employeeId}")
     public ResponseEntity<List<PerformanceReview>> getEmployeeReviews(@PathVariable Long employeeId) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof UserPrincipal) {
+            UserPrincipal up = (UserPrincipal) principal;
+            String role = up.getRole();
+            if ("ROLE_EMPLOYEE".equals(role)) {
+                Long myEmpId = up.getUser() != null && up.getUser().getEmployee() != null ? up.getUser().getEmployee().getId() : null;
+                if (myEmpId == null || !myEmpId.equals(employeeId)) {
+                    return ResponseEntity.status(403).build();
+                }
+            } else if ("ROLE_MANAGER".equals(role)) {
+                Long deptId = up.getDepartmentId();
+                if (deptId == null) return ResponseEntity.status(403).build();
+                var empOpt = employeeRepository.findById(employeeId);
+                if (empOpt.isEmpty() || empOpt.get().getDepartment() == null || !deptId.equals(empOpt.get().getDepartment().getId())) {
+                    return ResponseEntity.status(403).build();
+                }
+            }
+        }
         return ResponseEntity.ok(performanceReviewService.getReviewsByEmployee(employeeId));
     }
 

@@ -3,25 +3,34 @@ package com.ems.security;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+import jakarta.annotation.PostConstruct;
 import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JwtUtils {
 
-    // A secure 256-bit key encoded in Base64
-    private final String jwtSecret = "Y2hvb25hLW15LXNlY3JldC1rZXktZm9yLWVtcGxveWVlLW1hbmFnZW1lbnQtc3lzdGVtLTMxMjM0NTY3ODkw";
-    private final int jwtExpirationMs = 86400000; // 24 hours
+    @Value("${jwt.secret}")
+    private String jwtSecret;
 
-    private final Key key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+    @Value("${jwt.expiration-ms:86400000}")
+    private int jwtExpirationMs;
+
+    private Key key;
+
+    @PostConstruct
+    public void init() {
+        this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+    }
 
     public String generateJwtToken(Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         Long employeeId = null;
         Long departmentId = userPrincipal.getDepartmentId();
-        if (userPrincipal.getUser().getEmployee() != null) {
+        if (userPrincipal.getUser() != null && userPrincipal.getUser().getEmployee() != null) {
             employeeId = userPrincipal.getUser().getEmployee().getId();
         }
         return Jwts.builder()
