@@ -31,3 +31,23 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Local development artifacts
+uploads/
+test.log
+
+# Java / Maven generated files
+*.class
+*.jar
+*.war
+*.ear
+*.log
+*.tmp
+*.out
+*.cache
+*.bak
+*~
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

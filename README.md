@@ -1,122 +1,142 @@
 # Employee Management System (EMS)
 
-A modern, full-stack Employee Management System featuring a premium glassmorphic UI, robust role-based access control (RBAC), and automated workflow engines.
+A modern HR portal for a full employee lifecycle: onboarding, attendance, leave management, payroll, and role-based access control.
 
----
+## Overview
 
-## Project Summary
+EMS is a Spring Boot-based employee management application with a polished glassmorphic UI and a lightweight SPA frontend. It supports:
 
-The Employee Management System (EMS) is designed to streamline day-to-day organizational operations. It handles core HR processes, shift rostering, attendance checking, leave accruals, and monthly payroll processing. The application features a sleek dark/light mode toggle with interactive micro-animations.
+- Employee directory management
+- Shift scheduling and attendance logging
+- Leave applications and approval workflows
+- Expense claim submission and review
+- Payroll generation and payslip export
+- Role-based access for HR, managers, and employees
 
----
+## Key Features
 
-## Tech Stack
+- Centralized HR dashboard built with vanilla HTML/CSS/JavaScript
+- Secure authentication using JWT
+- REST API backend with Spring Security and Spring Data JPA
+- Embedded H2 database for local development
+- PDF and Excel exports for payroll and reports
+- Built-in admin workflows for approvals, audits, and policy configuration
 
-*   **Backend:** Java 26, Spring Boot 3.3, Spring Security, Spring Data JPA.
-*   **Database:** Embedded H2 for local development, with MySQL configuration still available for external deployments.
-*   **Frontend:** Vanilla HTML5, CSS3 (Glassmorphism layout, CSS variables for dark/light themes), and vanilla JavaScript.
-*   **Reporting:** Apache POI (Excel export), OpenPDF (Payslip and directory PDF reports).
+## Technology Stack
 
----
+- Java 26
+- Spring Boot 3.3.4
+- Spring Security
+- Spring Data JPA
+- Hibernate ORM
+- Embedded H2 database (default)
+- Vanilla JavaScript + Chart.js
+- OpenPDF and Apache POI
+- Maven build system
 
-## Repository & Code Structure
-
-The project follows a standard Maven directory layout:
+## Repository Structure
 
 ```text
 employee-management-system/
 ├── src/
 │   ├── main/
 │   │   ├── java/com/ems/
-│   │   │   ├── config/            # SecurityConfig, WebMvcConfig, and DataSeeder
-│   │   │   ├── controller/        # REST controllers (Auth, Employee, Leaves, Shift, Expenses, etc.)
-│   │   │   ├── dto/               # Login, Password, and request transfer models
-│   │   │   ├── entity/            # JPA entities (Employee, Leave, Shift, ExpenseClaim, User, etc.)
-│   │   │   ├── filter/            # JWT validation filter
+│   │   │   ├── config/            # Security and MVC configuration, seeding
+│   │   │   ├── controller/        # REST controllers for auth, employees, leaves, payroll, etc.
+│   │   │   ├── dto/               # Request and response DTOs
+│   │   │   ├── entity/            # JPA entities and domain models
+│   │   │   ├── exception/         # Custom exception handling
+│   │   │   ├── filter/            # JWT authentication filter
 │   │   │   ├── repository/        # Spring Data JPA repositories
-│   │   │   ├── security/          # UserDetails and JwtUtils helpers
-│   │   │   └── service/           # Service layer implementation
+│   │   │   ├── security/          # JWT utilities and user details services
+│   │   │   └── service/           # Business logic services
 │   │   └── resources/
-│   │       ├── static/            # Static assets (HTML, CSS, JS, uploaded files)
-│   │       │   ├── css/           # Glassmorphic stylesheet (style.css)
-│   │       │   ├── js/            # Client scripts (auth.js, api.js, app.js)
-│   │       │   ├── uploads/       # Profile photos storage
-│   │       │   ├── dashboard.html # Main dashboard app interface
-│   │       │   └── index.html     # Login page
+│   │       ├── static/            # Frontend assets, JS, CSS, HTML pages
 │   │       └── application.properties
-│   └── test/                      # Spring Boot JUnit tests
-├── pom.xml                        # Maven dependency configuration
+│   └── test/                      # JUnit tests
+├── pom.xml                        # Maven project definition
 └── README.md                      # Project documentation
 ```
 
----
-
-## Primary Users & Goals
-
-### 1. HR Admins (`ROLE_HR`)
-*   **Goal:** Maintain organization hierarchy, configure settings, and handle financial payouts.
-*   **Capabilities:** Full CRUD on employees/departments, create and configure work shifts, define leave policies, trigger or schedule monthly leave accruals, review profile change requests, approve expense claims, and generate payslips.
-
-### 2. Managers (`ROLE_MANAGER`)
-*   **Goal:** Supervise department teams and process operational requests.
-*   **Capabilities:** View department employees, track attendance logs, approve/reject leave applications, and review pending expense claims.
-
-### 3. Employees (`ROLE_EMPLOYEE`)
-*   **Goal:** Profile self-service, daily work logging, and compensation tracking.
-*   **Capabilities:** Submit profile change requests (First/Last name, Phone), check in/out of assigned shifts (with automated grace period tracking), apply for leave, submit expense claims for reimbursement, view performance reviews, and download PDF payslips.
-
----
-
-## Current Known Issues & Implementation Notes
-
-1.  **Lombok Compatibility:** To avoid compilation issues with compiler versions on Java 26 (specifically `TypeTag` errors), **Lombok is not used** in this repository. All entity classes and DTOs utilize standard Java constructors, getters, setters, and builder subclasses. Do not add Lombok annotations to new classes.
-2.  **Shift Crossing Days:** Standard attendance check-in/out records map to the same calendar date. Multi-day shifts spanning past midnight compare check-out times against standard end hours of the shift mapped to the start date.
-3.  **Local Photo Uploads:** Uploaded photos are stored inside a local folder mapped to `uploads/`. Ensure write permissions are granted to the application directory.
-
----
-
-## Getting Started & Contribution
+## Getting Started
 
 ### Prerequisites
-*   Java JDK 26
-*   Maven 3.x
-*   No local database server is required for the default dev run.
 
-### Installation
-1.  Start the app directly with the embedded H2 database configured in [application.properties](src/main/resources/application.properties).
-2.  If you want to use MySQL instead, change the datasource settings in [application.properties](src/main/resources/application.properties) before starting the app.
-3.  Seed initial database values. The seeder is automated and runs on first launch to create shifts, departments, administrators, and leave policies.
+- Java JDK 26
+- Maven 3.x
+- Optional: Docker for containerized deployment
+
+### Run Locally
+
+Start the application with:
+
+```powershell
+cd "a:\My project\employee-management-system"
+./mvnw.cmd spring-boot:run
+```
+
+Open the app at:
+
+- `http://localhost:8080`
+- `http://localhost:8080/h2-console` for the embedded H2 console
 
 ### Run Tests
-To verify code changes and run tests, execute:
-```cmd
+
+```powershell
 ./mvnw.cmd clean test
 ```
 
-### Run Locally
-Launch the Spring Boot development server:
-```cmd
-./mvnw.cmd spring-boot:run
+## Default Seeded Accounts
+
+The initial seed database includes these sample users:
+
+- **HR Admin:** `admin` / `admin123`
+- **Manager:** `manager` / `manager123`
+- **Employee:** `employee` / `employee123`
+
+## User Roles
+
+### `ROLE_HR`
+
+HR users can manage employees, departments, shifts, leave policies, payroll, expense approvals, and profile change requests.
+
+### `ROLE_MANAGER`
+
+Managers can review team attendance, approve or reject leave applications, and manage expense claim workflows for direct reports.
+
+### `ROLE_EMPLOYEE`
+
+Employees can log attendance, submit leave requests, request profile updates, and view payslips.
+
+## Development Notes
+
+- The app uses an embedded H2 database by default for quick local development.
+- Static UI files are served from `src/main/resources/static/`.
+- JWT tokens are issued by the backend and consumed by frontend requests.
+- The seed data loader automatically creates initial users and basic lookup data.
+
+## Deployment
+
+### Docker (optional)
+
+Build and run with Docker:
+
+```powershell
+docker build -t employee-management-system .
+docker run --rm -p 8080:8080 employee-management-system
 ```
-The application will be accessible at: **[http://localhost:8080](http://localhost:8080)**.
-The embedded H2 console is available at **[/h2-console](http://localhost:8080/h2-console)**.
 
-### Run In Docker
-Build the image and start the container:
-```cmd
-docker build -t employee-management:local .
-docker run --rm -p 8080:8080 -v %cd%\uploads:/app/uploads employee-management:local
-```
+### Configuration
 
-Or use Docker Compose:
-```cmd
-docker-compose up --build
-```
+Database and environment settings are configured in `src/main/resources/application.properties`.
 
-The application will be accessible at: **[http://localhost:8080](http://localhost:8080)**.
+## Contributing
 
-### Seeding Credentials
-On initial startup, log in with the following default accounts:
-*   **HR Admin:** `admin` / `admin123`
-*   **Manager:** `manager` / `manager123`
-*   **Employee:** `employee` / `employee123`
+1. Fork the repository
+2. Create a feature branch
+3. Run tests locally
+4. Open a pull request with a clear summary of your changes
+
+## License
+
+This project is available under the terms of the [MIT License](LICENSE).
