@@ -35,6 +35,7 @@ build/
 # Local development artifacts
 uploads/
 test.log
+implementation_plan.md
 
 # Java / Maven generated files
 *.class
