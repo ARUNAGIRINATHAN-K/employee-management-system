@@ -113,8 +113,8 @@ public class LeaveController {
     @PreAuthorize("hasAuthority('ROLE_HR')")
     public ResponseEntity<?> accrueLeaves() {
         try {
-            String adminUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-            leaveService.accrueLeavesManually(adminUsername);
+            String hrUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+            leaveService.accrueLeavesManually(hrUsername);
             return ResponseEntity.ok(Map.of("message", "Leave accrual completed successfully."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
@@ -127,11 +127,11 @@ public class LeaveController {
     }
 
     @PutMapping("/policies/{id}")
-    @PreAuthorize("hasAuthority('ROLE_HR')")
+    @PreAuthorize("hasAnyAuthority('ROLE_HR','ROLE_ADMIN')")
     public ResponseEntity<?> updatePolicy(@PathVariable Long id, @RequestBody LeavePolicy policyDetails) {
         try {
-            String adminUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-            LeavePolicy updated = leaveService.updatePolicy(id, policyDetails, adminUsername);
+            String hrUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+            LeavePolicy updated = leaveService.updatePolicy(id, policyDetails, hrUsername);
             return ResponseEntity.ok(updated);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));

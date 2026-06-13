@@ -23,25 +23,25 @@ public class DepartmentController {
     private EmployeeRepository employeeRepository;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ROLE_HR')")
+    @PreAuthorize("hasAnyAuthority('ROLE_HR','ROLE_ADMIN')")
     public ResponseEntity<List<Department>> getAllDepartments() {
         return ResponseEntity.ok(departmentService.getAllDepartments());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_HR')")
+    @PreAuthorize("hasAnyAuthority('ROLE_HR','ROLE_ADMIN')")
     public ResponseEntity<Department> getDepartmentById(@PathVariable Long id) {
         return ResponseEntity.ok(departmentService.getDepartmentById(id));
     }
 
     @GetMapping("/{id}/employees")
-    @PreAuthorize("hasAuthority('ROLE_HR')")
+    @PreAuthorize("hasAnyAuthority('ROLE_HR','ROLE_ADMIN')")
     public ResponseEntity<List<Employee>> getDepartmentEmployees(@PathVariable Long id) {
         return ResponseEntity.ok(employeeRepository.findByDepartmentIdAndStatusNot(id, "DELETED"));
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ROLE_HR')")
+    @PreAuthorize("hasAnyAuthority('ROLE_HR','ROLE_ADMIN')")
     public ResponseEntity<?> createDepartment(@RequestBody Department department) {
         try {
             String adminUsername = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -53,7 +53,7 @@ public class DepartmentController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_HR')")
+    @PreAuthorize("hasAnyAuthority('ROLE_HR','ROLE_ADMIN')")
     public ResponseEntity<?> updateDepartment(@PathVariable Long id, @RequestBody Department departmentDetails) {
         try {
             String adminUsername = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -65,7 +65,7 @@ public class DepartmentController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_HR')")
+    @PreAuthorize("hasAnyAuthority('ROLE_HR','ROLE_ADMIN')")
     public ResponseEntity<?> deleteDepartment(@PathVariable Long id) {
         try {
             String adminUsername = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -77,7 +77,7 @@ public class DepartmentController {
     }
 
     @PostMapping("/{id}/assign")
-    @PreAuthorize("hasAuthority('ROLE_HR')")
+    @PreAuthorize("hasAnyAuthority('ROLE_HR','ROLE_ADMIN')")
     public ResponseEntity<?> assignEmployees(@PathVariable Long id, @RequestBody List<Long> employeeIds) {
         try {
             String adminUsername = SecurityContextHolder.getContext().getAuthentication().getName();
