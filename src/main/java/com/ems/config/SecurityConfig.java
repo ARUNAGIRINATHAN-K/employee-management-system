@@ -49,10 +49,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
+            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Allow static resources & root path (protect pages like dashboard)
-                .requestMatchers("/", "/index.html", "/css/**", "/js/**").permitAll()
+                // Allow static resources & root path (allow SPA shells like dashboard)
+                .requestMatchers("/", "/index.html", "/dashboard.html", "/css/**", "/js/**").permitAll()
+                // Allow H2 console for local debugging
+                .requestMatchers("/h2-console/**").permitAll()
                 // Allow authentication APIs
                 .requestMatchers("/api/auth/**").permitAll()
                 // Require authentication for all other APIs
