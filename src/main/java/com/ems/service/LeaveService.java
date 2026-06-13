@@ -169,8 +169,8 @@ public class LeaveService {
     }
 
     @Transactional
-    public void accrueLeavesManually(String adminUsername) {
-        accrueLeavesForActiveEmployees(adminUsername);
+    public void accrueLeavesManually(String initiatedBy) {
+        accrueLeavesForActiveEmployees(initiatedBy);
     }
 
     private void accrueLeavesForActiveEmployees(String runBy) {
@@ -230,15 +230,15 @@ public class LeaveService {
     }
 
     @Transactional
-    public LeavePolicy updatePolicy(Long id, LeavePolicy policyDetails, String adminUsername) {
+        public LeavePolicy updatePolicy(Long id, LeavePolicy policyDetails, String initiatedBy) {
         LeavePolicy policy = leavePolicyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Leave policy not found"));
+            .orElseThrow(() -> new RuntimeException("Leave policy not found"));
         policy.setAnnualAllocation(policyDetails.getAnnualAllocation());
         policy.setMonthlyAccrualRate(policyDetails.getMonthlyAccrualRate());
         LeavePolicy updated = leavePolicyRepository.save(policy);
-        auditLogService.log("LEAVE_POLICY_UPDATE", adminUsername,
-                "Updated leave policy for " + policy.getLeaveType() + 
-                " (Annual: " + policy.getAnnualAllocation() + ", Monthly: " + policy.getMonthlyAccrualRate() + ")");
+        auditLogService.log("LEAVE_POLICY_UPDATE", initiatedBy,
+            "Updated leave policy for " + policy.getLeaveType() + 
+            " (Annual: " + policy.getAnnualAllocation() + ", Monthly: " + policy.getMonthlyAccrualRate() + ")");
         notificationService.sendNotification("Leave policy for " + policy.getLeaveType() + " has been updated.");
         return updated;
     }
