@@ -137,3 +137,16 @@ INSERT INTO roles (name, description) VALUES
     ('ROLE_EMPLOYEE', 'Employee access: view and update own profile only')
 ON DUPLICATE KEY UPDATE description = VALUES(description);
 
+-- ============================================================
+-- SEED DATA - Default Admin User (admin / admin123)
+-- ============================================================
+INSERT INTO users (id, username, email, password) VALUES
+    (1, 'admin', 'admin@ems.com', '$2a$10$h8ZZJdAs1MIQNjCU.Kw73.ZtTmMxFFtDTUQJEN9hdzAgVZi5nd51O')
+ON DUPLICATE KEY UPDATE username = VALUES(username);
+
+-- Map Admin User (user_id=1) to ROLE_ADMIN (role_id=1)
+INSERT INTO user_roles (user_id, role_id) VALUES
+    (1, 1)
+ON DUPLICATE KEY UPDATE role_id = role_id;
+
+
