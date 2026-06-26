@@ -1,5 +1,6 @@
 package com.ems.employee_management_system.controller;
 
+import com.ems.employee_management_system.dto.AssignAccountRequest;
 import com.ems.employee_management_system.dto.EmployeeDTO;
 import com.ems.employee_management_system.service.EmployeeService;
 import jakarta.validation.Valid;
@@ -119,5 +120,22 @@ public class EmployeeController {
     public ResponseEntity<Void> deleteEmployee(@PathVariable("id") Long id) {
         employeeService.deleteEmployee(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // ASSIGN LOGIN ACCOUNT
+    // ──────────────────────────────────────────────────────────────────────
+
+    /**
+     * POST /api/employees/{id}/account
+     * Creates a new User with the given credentials + role and links it to this employee.
+     * Allowed: ADMIN only
+     */
+    @PostMapping("/{id}/account")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<EmployeeDTO> assignAccount(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody AssignAccountRequest request) {
+        return ResponseEntity.ok(employeeService.assignAccount(id, request));
     }
 }

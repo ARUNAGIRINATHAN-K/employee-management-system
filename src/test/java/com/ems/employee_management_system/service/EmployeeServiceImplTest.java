@@ -9,6 +9,7 @@ import com.ems.employee_management_system.model.Employee;
 import com.ems.employee_management_system.model.EmployeeStatus;
 import com.ems.employee_management_system.repository.DepartmentRepository;
 import com.ems.employee_management_system.repository.EmployeeRepository;
+import com.ems.employee_management_system.repository.RoleRepository;
 import com.ems.employee_management_system.repository.UserRepository;
 import com.ems.employee_management_system.service.impl.EmployeeServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -36,6 +38,12 @@ class EmployeeServiceImplTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private RoleRepository roleRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     // Use concrete mapper instance for robust tests
     private final EmployeeMapper employeeMapper = new EmployeeMapper();
 
@@ -51,7 +59,9 @@ class EmployeeServiceImplTest {
                 employeeRepository,
                 departmentRepository,
                 userRepository,
-                employeeMapper
+                roleRepository,
+                employeeMapper,
+                passwordEncoder
         );
 
         department = new Department();
