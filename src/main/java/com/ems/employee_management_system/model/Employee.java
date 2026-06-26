@@ -53,7 +53,6 @@ public class Employee {
     private BigDecimal salary;
 
     @NotNull(message = "Hire date is required")
-    @PastOrPresent(message = "Hire date must be in the past or present")
     @Column(name = "hire_date", nullable = false)
     private LocalDate hireDate;
 
