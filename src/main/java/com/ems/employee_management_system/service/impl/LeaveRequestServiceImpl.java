@@ -69,11 +69,52 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
 
     @Override
     public List<LeaveRequestDTO> getPersonalLeaveHistory(String username) {
-        Employee employee = getEmployeeByUsername(username);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+        Optional<Employee> empOpt = employeeRepository.findByUserId(user.getId());
+        if (!empOpt.isPresent()) {
+            return List.of();
+        }
+        Employee employee = empOpt.get();
         return leaveRequestRepository.findByEmployeeIdOrderByStartDateDesc(employee.getId())
                 .stream()
                 .map(leaveRequestMapper::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<LeaveRequestDTO> getTeamLeaveHistory(String managerUsername) {
+        User user = userRepository.findByUsername(managerUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + managerUsername));
+
+        boolean isAdmin = user.getRoles().stream()
+                .anyMatch(r -> r.getName().equals("ROLE_ADMIN"));
+
+        if (isAdmin) {
+            return leaveRequestRepository.findAllByOrderByStartDateDesc()
+                    .stream()
+                    .map(leaveRequestMapper::toDTO)
+                    .collect(Collectors.toList());
+        }
+
+        boolean isManager = user.getRoles().stream()
+                .anyMatch(r -> r.getName().equals("ROLE_MANAGER"));
+
+        if (isManager) {
+            Employee manager = employeeRepository.findByUserId(user.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Manager employee profile not found"));
+
+            if (manager.getDepartment() == null) {
+                throw new BadRequestException("Manager is not assigned to any department.");
+            }
+
+            return leaveRequestRepository.findByDepartmentId(manager.getDepartment().getId())
+                    .stream()
+                    .map(leaveRequestMapper::toDTO)
+                    .collect(Collectors.toList());
+        }
+
+        return List.of();
     }
 
     @Override

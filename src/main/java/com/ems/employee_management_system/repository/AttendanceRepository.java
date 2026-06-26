@@ -29,6 +29,9 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
     @Query("SELECT a FROM Attendance a JOIN FETCH a.employee e WHERE e.department.id = :departmentId AND a.date BETWEEN :startDate AND :endDate ORDER BY a.date DESC")
     List<Attendance> findByDepartmentIdAndDateBetween(@Param("departmentId") Long departmentId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
+    @Query("SELECT a FROM Attendance a JOIN FETCH a.employee e WHERE a.date BETWEEN :startDate AND :endDate ORDER BY a.date DESC")
+    List<Attendance> findByDateBetweenOrderByDateDesc(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
     @Query("SELECT a.status, COUNT(a) FROM Attendance a JOIN a.employee e WHERE e.department.id = :departmentId AND a.date = :date GROUP BY a.status")
     List<Object[]> countStatusByDepartmentIdAndDate(@Param("departmentId") Long departmentId, @Param("date") LocalDate date);
 

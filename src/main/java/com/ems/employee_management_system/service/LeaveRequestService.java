@@ -12,4 +12,5 @@ public interface LeaveRequestService {
     List<LeaveRequestDTO> getPendingLeaveRequests(String managerUsername);
     LeaveRequestDTO approveLeave(Long id, String managerUsername);
     LeaveRequestDTO rejectLeave(Long id, String managerUsername);
+    List<LeaveRequestDTO> getTeamLeaveHistory(String managerUsername);
 }

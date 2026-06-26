@@ -9,6 +9,7 @@ import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
+import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
 
 import { useAuth } from '../../context/AuthContext';
 import { leaveService } from '../../services/leaveService';
@@ -31,10 +32,10 @@ const getStatusColor = (status: string) => {
 };
 
 const LeaveDashboard = () => {
-  const { isManager, isAdmin, isHR } = useAuth();
+  const { user, isManager, isAdmin, isHR } = useAuth();
   const showApprovalsTab = isManager() || isAdmin() || isHR();
 
-  // Tab State: 0 = My Leaves, 1 = Approvals
+  // Tab State: 0 = My Leaves, 1 = Pending Reviews, 2 = Leave History
   const [activeTab, setActiveTab] = useState(0);
 
   // ─── My Leaves State ────────────────────────────────────────────────────────
@@ -47,8 +48,11 @@ const LeaveDashboard = () => {
     reason: '',
   });
 
-  // ─── Approvals State ────────────────────────────────────────────────────────
+  // ─── Pending Approvals State ────────────────────────────────────────────────
   const [pendingRequests, setPendingRequests] = useState<LeaveRequest[]>([]);
+
+  // ─── History State (Manager / Admin Only) ───────────────────────────────────
+  const [teamHistory, setTeamHistory] = useState<LeaveRequest[]>([]);
 
   // UI
   const [loading, setLoading] = useState(false);
@@ -56,6 +60,10 @@ const LeaveDashboard = () => {
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const fetchMyLeaves = async () => {
+    if (!user?.employeeId) {
+      setMyHistory([]);
+      return;
+    }
     try {
       setLoading(true);
       const data = await leaveService.getPersonalLeaveHistory();
@@ -81,14 +89,29 @@ const LeaveDashboard = () => {
     }
   };
 
+  const fetchTeamHistory = async () => {
+    try {
+      setLoading(true);
+      const data = await leaveService.getTeamLeaveHistory();
+      setTeamHistory(data);
+    } catch (err: any) {
+      console.error(err);
+      setMsg({ type: 'error', text: err.response?.data?.message || 'Failed to load team leave history.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     setMsg(null);
     if (activeTab === 0) {
       fetchMyLeaves();
     } else if (activeTab === 1 && showApprovalsTab) {
       fetchPendingRequests();
+    } else if (activeTab === 2 && showApprovalsTab) {
+      fetchTeamHistory();
     }
-  }, [activeTab]);
+  }, [activeTab, user?.employeeId]);
 
   // Submit Leave Request
   const handleSubmitLeave = async (e: React.FormEvent) => {
@@ -214,6 +237,7 @@ const LeaveDashboard = () => {
         >
           <Tab label="My Requests" id="tab-my-leaves" />
           {showApprovalsTab && <Tab label="Pending Approvals" id="tab-leave-approvals" />}
+          {showApprovalsTab && <Tab label="Leave History" id="tab-leave-history" />}
         </Tabs>
 
         {/* Alerts */}
@@ -238,137 +262,147 @@ const LeaveDashboard = () => {
             <>
               {/* TAB 0: MY REQUESTS */}
               {activeTab === 0 && (
-                <Grid container spacing={3.5}>
-                  {/* Left Form Trigger or Form Block */}
-                  <Grid size={{ xs: 12, md: formOpen ? 4.5 : 12 }}>
-                    {!formOpen ? (
-                      <Paper
-                        elevation={0}
-                        sx={{
-                          border: '1px dashed',
-                          borderColor: 'divider',
-                          borderRadius: '8px',
-                          p: 4,
-                          textAlign: 'center',
-                          cursor: 'pointer',
-                          '&:hover': { bgcolor: '#F8FAFC', borderColor: 'primary.main' },
-                          transition: 'all 0.15s',
-                        }}
-                        onClick={() => setFormOpen(true)}
-                      >
-                        <AddCircleOutlineRoundedIcon sx={{ fontSize: '2.5rem', color: 'text.disabled', mb: 1.5 }} />
-                        <Typography variant="subtitle1" sx={{ fontWeight: 800, fontFamily: 'Outfit, sans-serif', mb: 0.5 }}>
-                          Apply Leave or WFH
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'Inter, sans-serif', fontSize: '0.82rem' }}>
-                          Submit a sick leave, vacation request, short permission, or remote work schedule.
-                        </Typography>
-                      </Paper>
-                    ) : (
-                      <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', bgcolor: '#FAFAFB' }}>
-                        <CardContent sx={{ p: 3.5 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 800, fontFamily: 'Outfit, sans-serif', mb: 3 }}>
-                            Submit Request
+                !user?.employeeId ? (
+                  <Box sx={{ p: 4, textAlign: 'center', border: '1px solid', borderColor: 'divider', borderRadius: '8px', bgcolor: '#FAFBFD' }}>
+                    <HourglassEmptyRoundedIcon sx={{ fontSize: '3rem', color: 'text.disabled', mb: 2 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 800, fontFamily: 'Outfit, sans-serif', mb: 1 }}>
+                      No Employee Profile Linked
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'Inter, sans-serif', maxWidth: '480px', mx: 'auto' }}>
+                      This administrator/user account is not linked to an employee profile. Personal leave applications and history records are not applicable.
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Grid container spacing={3.5}>
+                    {/* Left Form Trigger or Form Block */}
+                    <Grid size={{ xs: 12, md: formOpen ? 4.5 : 12 }}>
+                      {!formOpen ? (
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            border: '1px dashed',
+                            borderColor: 'divider',
+                            borderRadius: '8px',
+                            p: 4,
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            '&:hover': { bgcolor: '#F8FAFC', borderColor: 'primary.main' },
+                            transition: 'all 0.15s',
+                          }}
+                          onClick={() => setFormOpen(true)}
+                        >
+                          <AddCircleOutlineRoundedIcon sx={{ fontSize: '2.5rem', color: 'text.disabled', mb: 1.5 }} />
+                          <Typography variant="subtitle1" sx={{ fontWeight: 800, fontFamily: 'Outfit, sans-serif', mb: 0.5 }}>
+                            Apply Leave or WFH
                           </Typography>
+                          <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'Inter, sans-serif', fontSize: '0.82rem' }}>
+                            Submit a sick leave, vacation request, short permission, or remote work schedule.
+                          </Typography>
+                        </Paper>
+                      ) : (
+                        <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', bgcolor: '#FAFAFB' }}>
+                          <CardContent sx={{ p: 3.5 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 800, fontFamily: 'Outfit, sans-serif', mb: 3 }}>
+                              Submit Request
+                            </Typography>
 
-                          <form onSubmit={handleSubmitLeave}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                              <TextField
-                                select
-                                label="Leave Type"
-                                fullWidth
-                                required
-                                value={newRequest.leaveType}
-                                onChange={(e) => setNewRequest({ ...newRequest, leaveType: e.target.value as LeaveType })}
-                                sx={{ '& label': { fontFamily: 'Outfit, sans-serif' }, '& .MuiSelect-select': { fontFamily: 'Inter, sans-serif' } }}
-                              >
-                                {LEAVE_TYPES.map((opt) => (
-                                  <MenuItem key={opt.value} value={opt.value} sx={{ fontFamily: 'Inter, sans-serif' }}>
-                                    {opt.label}
-                                  </MenuItem>
-                                ))}
-                              </TextField>
-
-                              <Grid container spacing={2}>
-                                <Grid size={{ xs: 12, sm: 6 }}>
-                                  <TextField
-                                    label="Start Date"
-                                    type="date"
-                                    fullWidth
-                                    required
-                                    value={newRequest.startDate}
-                                    onChange={(e) => setNewRequest({ ...newRequest, startDate: e.target.value })}
-                                    slotProps={{
-                                      inputLabel: { shrink: true }
-                                    }}
-                                    sx={{ '& label': { fontFamily: 'Outfit, sans-serif' }, '& input': { fontFamily: 'Inter, sans-serif' } }}
-                                  />
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 6 }}>
-                                  <TextField
-                                    label="End Date"
-                                    type="date"
-                                    fullWidth
-                                    required
-                                    value={newRequest.endDate}
-                                    onChange={(e) => setNewRequest({ ...newRequest, endDate: e.target.value })}
-                                    slotProps={{
-                                      inputLabel: { shrink: true }
-                                    }}
-                                    sx={{ '& label': { fontFamily: 'Outfit, sans-serif' }, '& input': { fontFamily: 'Inter, sans-serif' } }}
-                                  />
-                                </Grid>
-                              </Grid>
-
-                              <TextField
-                                label="Reason / Notes"
-                                multiline
-                                rows={3}
-                                fullWidth
-                                required
-                                value={newRequest.reason}
-                                onChange={(e) => setNewRequest({ ...newRequest, reason: e.target.value })}
-                                placeholder="State reason or brief project handover details..."
-                                sx={{ '& label': { fontFamily: 'Outfit, sans-serif' }, '& .MuiInputBase-input': { fontFamily: 'Inter, sans-serif' } }}
-                              />
-
-                              <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, justifyContent: 'flex-end' }}>
-                                <Button
-                                  variant="outlined"
-                                  onClick={() => setFormOpen(false)}
-                                  disabled={actionLoading}
-                                  sx={{ textTransform: 'none', fontWeight: 700, fontFamily: 'Outfit, sans-serif', borderRadius: '6px' }}
+                            <form onSubmit={handleSubmitLeave}>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                <TextField
+                                  select
+                                  label="Leave Type"
+                                  fullWidth
+                                  required
+                                  value={newRequest.leaveType}
+                                  onChange={(e) => setNewRequest({ ...newRequest, leaveType: e.target.value as LeaveType })}
+                                  sx={{ '& label': { fontFamily: 'Outfit, sans-serif' }, '& .MuiSelect-select': { fontFamily: 'Inter, sans-serif' } }}
                                 >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  id="btn-submit-leave"
-                                  type="submit"
-                                  variant="contained"
-                                  color="primary"
-                                  disabled={actionLoading}
-                                  startIcon={<SendRoundedIcon fontSize="small" />}
-                                  sx={{
-                                    textTransform: 'none',
-                                    fontWeight: 700,
-                                    fontFamily: 'Outfit, sans-serif',
-                                    borderRadius: '6px',
-                                    boxShadow: 'none',
-                                    '&:hover': { boxShadow: 'none' },
-                                  }}
-                                >
-                                  Submit
-                                </Button>
+                                  {LEAVE_TYPES.map((opt) => (
+                                    <MenuItem key={opt.value} value={opt.value} sx={{ fontFamily: 'Inter, sans-serif' }}>
+                                      {opt.label}
+                                    </MenuItem>
+                                  ))}
+                                </TextField>
+
+                                <Grid container spacing={2}>
+                                  <Grid size={{ xs: 12, sm: 6 }}>
+                                    <TextField
+                                      label="Start Date"
+                                      type="date"
+                                      fullWidth
+                                      required
+                                      value={newRequest.startDate}
+                                      onChange={(e) => setNewRequest({ ...newRequest, startDate: e.target.value })}
+                                      slotProps={{
+                                        inputLabel: { shrink: true }
+                                      }}
+                                      sx={{ '& label': { fontFamily: 'Outfit, sans-serif' }, '& input': { fontFamily: 'Inter, sans-serif' } }}
+                                    />
+                                  </Grid>
+                                  <Grid size={{ xs: 12, sm: 6 }}>
+                                    <TextField
+                                      label="End Date"
+                                      type="date"
+                                      fullWidth
+                                      required
+                                      value={newRequest.endDate}
+                                      onChange={(e) => setNewRequest({ ...newRequest, endDate: e.target.value })}
+                                      slotProps={{
+                                        inputLabel: { shrink: true }
+                                      }}
+                                      sx={{ '& label': { fontFamily: 'Outfit, sans-serif' }, '& input': { fontFamily: 'Inter, sans-serif' } }}
+                                    />
+                                  </Grid>
+                                </Grid>
+
+                                <TextField
+                                  label="Reason / Notes"
+                                  multiline
+                                  rows={3}
+                                  fullWidth
+                                  required
+                                  value={newRequest.reason}
+                                  onChange={(e) => setNewRequest({ ...newRequest, reason: e.target.value })}
+                                  placeholder="State reason or brief project handover details..."
+                                  sx={{ '& label': { fontFamily: 'Outfit, sans-serif' }, '& .MuiInputBase-input': { fontFamily: 'Inter, sans-serif' } }}
+                                />
+
+                                <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, justifyContent: 'flex-end' }}>
+                                  <Button
+                                    variant="outlined"
+                                    onClick={() => setFormOpen(false)}
+                                    disabled={actionLoading}
+                                    sx={{ textTransform: 'none', fontWeight: 700, fontFamily: 'Outfit, sans-serif', borderRadius: '6px' }}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    id="btn-submit-leave"
+                                    type="submit"
+                                    variant="contained"
+                                    color="primary"
+                                    disabled={actionLoading}
+                                    startIcon={<SendRoundedIcon fontSize="small" />}
+                                    sx={{
+                                      textTransform: 'none',
+                                      fontWeight: 700,
+                                      fontFamily: 'Outfit, sans-serif',
+                                      borderRadius: '6px',
+                                      boxShadow: 'none',
+                                      '&:hover': { boxShadow: 'none' },
+                                    }}
+                                  >
+                                    Submit
+                                  </Button>
+                                </Box>
                               </Box>
-                            </Box>
-                          </form>
-                        </CardContent>
-                      </Card>
-                    )}
-                  </Grid>
+                            </form>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </Grid>
 
-                  {/* History List */}
-                  {(!formOpen || formOpen) && (
+                    {/* History List */}
                     <Grid size={{ xs: 12, md: formOpen ? 7.5 : 12 }}>
                       <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
                         <CardContent sx={{ p: 3 }}>
@@ -438,8 +472,8 @@ const LeaveDashboard = () => {
                         </CardContent>
                       </Card>
                     </Grid>
-                  )}
-                </Grid>
+                  </Grid>
+                )
               )}
 
               {/* TAB 1: PENDING APPROVALS */}
@@ -513,6 +547,97 @@ const LeaveDashboard = () => {
                                         Reject
                                       </Button>
                                     </Box>
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            )}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </CardContent>
+                  </Card>
+                </Box>
+              )}
+
+              {/* TAB 2: LEAVE HISTORY (MANAGER / PRIVILEGED ONLY) */}
+              {activeTab === 2 && showApprovalsTab && (
+                <Box>
+                  <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
+                    <CardContent sx={{ p: 3 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 800, fontFamily: 'Outfit, sans-serif', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <HistoryRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                          {isAdmin() ? 'Global Leaves & WFH History' : 'Team Leaves & WFH History'}
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={fetchTeamHistory}
+                          sx={{ textTransform: 'none', fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', borderRadius: '6px', py: 0.5 }}
+                        >
+                          Refresh Logs
+                        </Button>
+                      </Box>
+
+                      <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '6px', overflow: 'hidden' }}>
+                        <Table size="small">
+                          <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Employee Name</TableCell>
+                              <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Type</TableCell>
+                              <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Duration</TableCell>
+                              <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Reason</TableCell>
+                              <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Status</TableCell>
+                              <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Approved By</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {teamHistory.length === 0 ? (
+                              <TableRow>
+                                <TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary', fontFamily: 'Inter, sans-serif', fontSize: '0.85rem' }}>
+                                  No leave history logs found.
+                                </TableCell>
+                              </TableRow>
+                            ) : (
+                              teamHistory.map((row) => (
+                                <TableRow key={row.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                                  <TableCell sx={{ fontFamily: 'Outfit, sans-serif', fontSize: '0.82rem', fontWeight: 600 }}>{row.employeeName}</TableCell>
+                                  <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.8rem' }}>
+                                    <Chip
+                                      label={row.leaveType}
+                                      variant="outlined"
+                                      size="small"
+                                      sx={{ fontSize: '0.65rem', height: 18, borderRadius: '4px', textTransform: 'uppercase' }}
+                                    />
+                                  </TableCell>
+                                  <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', color: 'text.secondary' }}>
+                                    {row.startDate} to {row.endDate}
+                                  </TableCell>
+                                  <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', maxWidth: '200px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                    {row.reason}
+                                  </TableCell>
+                                  <TableCell sx={{ py: 1 }}>
+                                    {(() => {
+                                      const col = getStatusColor(row.status);
+                                      return (
+                                        <Chip
+                                          label={col.label}
+                                          size="small"
+                                          sx={{
+                                            bgcolor: col.bg,
+                                            color: col.text,
+                                            fontWeight: 700,
+                                            fontSize: '0.68rem',
+                                            height: 20,
+                                            borderRadius: '4px',
+                                            fontFamily: 'Outfit, sans-serif',
+                                          }}
+                                        />
+                                      );
+                                    })()}
+                                  </TableCell>
+                                  <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', color: 'text.secondary' }}>
+                                    {row.approvedByUsername || '—'}
                                   </TableCell>
                                 </TableRow>
                               ))

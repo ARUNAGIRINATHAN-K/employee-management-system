@@ -23,6 +23,11 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long
     @Query("SELECT l FROM LeaveRequest l JOIN FETCH l.employee e WHERE e.department.id = :departmentId AND l.status = :status ORDER BY l.startDate DESC")
     List<LeaveRequest> findByDepartmentIdAndStatus(@Param("departmentId") Long departmentId, @Param("status") LeaveStatus status);
 
+    @Query("SELECT l FROM LeaveRequest l JOIN FETCH l.employee e WHERE e.department.id = :departmentId ORDER BY l.startDate DESC")
+    List<LeaveRequest> findByDepartmentId(@Param("departmentId") Long departmentId);
+
+    List<LeaveRequest> findAllByOrderByStartDateDesc();
+
     @Query("SELECT l FROM LeaveRequest l WHERE l.employee.id = :employeeId AND l.status = 'APPROVED' AND :date BETWEEN l.startDate AND l.endDate")
     List<LeaveRequest> findApprovedLeaveByEmployeeIdAndDate(@Param("employeeId") Long employeeId, @Param("date") LocalDate date);
 }

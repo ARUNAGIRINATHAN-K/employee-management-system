@@ -42,7 +42,13 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     @Transactional
     public AttendanceDTO clockIn(String username) {
-        Employee employee = getEmployeeByUsername(username);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+        Optional<Employee> empOpt = employeeRepository.findByUserId(user.getId());
+        if (!empOpt.isPresent()) {
+            throw new BadRequestException("Cannot clock in: No employee profile is linked to your user account.");
+        }
+        Employee employee = empOpt.get();
         LocalDate today = LocalDate.now();
 
         Optional<Attendance> existingOpt = attendanceRepository.findByEmployeeIdAndDate(employee.getId(), today);
@@ -89,7 +95,13 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     @Transactional
     public AttendanceDTO clockOut(String username) {
-        Employee employee = getEmployeeByUsername(username);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+        Optional<Employee> empOpt = employeeRepository.findByUserId(user.getId());
+        if (!empOpt.isPresent()) {
+            throw new BadRequestException("Cannot clock out: No employee profile is linked to your user account.");
+        }
+        Employee employee = empOpt.get();
         LocalDate today = LocalDate.now();
 
         Attendance attendance = attendanceRepository.findByEmployeeIdAndDate(employee.getId(), today)
@@ -122,7 +134,13 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public AttendanceDTO getTodayStatus(String username) {
-        Employee employee = getEmployeeByUsername(username);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+        Optional<Employee> empOpt = employeeRepository.findByUserId(user.getId());
+        if (!empOpt.isPresent()) {
+            return null;
+        }
+        Employee employee = empOpt.get();
         LocalDate today = LocalDate.now();
         return attendanceRepository.findByEmployeeIdAndDate(employee.getId(), today)
                 .map(attendanceMapper::toDTO)
@@ -131,7 +149,13 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public List<AttendanceDTO> getPersonalHistory(String username, LocalDate startDate, LocalDate endDate) {
-        Employee employee = getEmployeeByUsername(username);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+        Optional<Employee> empOpt = employeeRepository.findByUserId(user.getId());
+        if (!empOpt.isPresent()) {
+            return List.of();
+        }
+        Employee employee = empOpt.get();
         return attendanceRepository.findByEmployeeIdAndDateBetweenOrderByDateDesc(employee.getId(), startDate, endDate)
                 .stream()
                 .map(attendanceMapper::toDTO)
@@ -140,7 +164,13 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public AttendanceSummaryDTO getPersonalSummary(String username) {
-        Employee employee = getEmployeeByUsername(username);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+        Optional<Employee> empOpt = employeeRepository.findByUserId(user.getId());
+        if (!empOpt.isPresent()) {
+            return AttendanceSummaryDTO.builder().build();
+        }
+        Employee employee = empOpt.get();
         LocalDate today = LocalDate.now();
         LocalDate startOfMonth = today.with(TemporalAdjusters.firstDayOfMonth());
         LocalDate endOfMonth = today.with(TemporalAdjusters.lastDayOfMonth());
@@ -204,6 +234,17 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public List<AttendanceDTO> getTeamTodayStatus(String managerUsername) {
+        User user = userRepository.findByUsername(managerUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + managerUsername));
+        boolean isAdmin = user.getRoles().stream()
+                .anyMatch(r -> r.getName().equals("ROLE_ADMIN"));
+        if (isAdmin) {
+            return attendanceRepository.findByDate(LocalDate.now())
+                    .stream()
+                    .map(attendanceMapper::toDTO)
+                    .collect(Collectors.toList());
+        }
+
         Employee manager = getEmployeeByUsername(managerUsername);
         if (manager.getDepartment() == null) {
             throw new BadRequestException("Manager is not assigned to any department.");
@@ -216,6 +257,17 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public List<AttendanceDTO> getTeamHistory(String managerUsername, LocalDate startDate, LocalDate endDate) {
+        User user = userRepository.findByUsername(managerUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + managerUsername));
+        boolean isAdmin = user.getRoles().stream()
+                .anyMatch(r -> r.getName().equals("ROLE_ADMIN"));
+        if (isAdmin) {
+            return attendanceRepository.findByDateBetweenOrderByDateDesc(startDate, endDate)
+                    .stream()
+                    .map(attendanceMapper::toDTO)
+                    .collect(Collectors.toList());
+        }
+
         Employee manager = getEmployeeByUsername(managerUsername);
         if (manager.getDepartment() == null) {
             throw new BadRequestException("Manager is not assigned to any department.");
@@ -228,13 +280,22 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     public Map<String, Long> getTeamSummaryCounts(String managerUsername) {
-        Employee manager = getEmployeeByUsername(managerUsername);
-        if (manager.getDepartment() == null) {
-            throw new BadRequestException("Manager is not assigned to any department.");
-        }
+        User user = userRepository.findByUsername(managerUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + managerUsername));
+        boolean isAdmin = user.getRoles().stream()
+                .anyMatch(r -> r.getName().equals("ROLE_ADMIN"));
 
-        List<Object[]> queryResults = attendanceRepository.countStatusByDepartmentIdAndDate(
-                manager.getDepartment().getId(), LocalDate.now());
+        List<Object[]> queryResults;
+        if (isAdmin) {
+            queryResults = attendanceRepository.countStatusByDate(LocalDate.now());
+        } else {
+            Employee manager = getEmployeeByUsername(managerUsername);
+            if (manager.getDepartment() == null) {
+                throw new BadRequestException("Manager is not assigned to any department.");
+            }
+            queryResults = attendanceRepository.countStatusByDepartmentIdAndDate(
+                    manager.getDepartment().getId(), LocalDate.now());
+        }
 
         Map<String, Long> statusCounts = new HashMap<>();
         // Initialize counts to 0

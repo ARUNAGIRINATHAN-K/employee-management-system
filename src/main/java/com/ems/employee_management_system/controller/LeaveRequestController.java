@@ -66,4 +66,13 @@ public class LeaveRequestController {
     public ResponseEntity<LeaveRequestDTO> rejectLeave(@PathVariable("id") Long id, Principal principal) {
         return ResponseEntity.ok(leaveRequestService.rejectLeave(id, principal.getName()));
     }
+
+    /**
+     * GET /api/leaves/history : Fetch full team/global leave requests history (Admin and Manager only).
+     */
+    @GetMapping("/history")
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER', 'ROLE_ADMIN', 'ROLE_HR')")
+    public ResponseEntity<List<LeaveRequestDTO>> getTeamLeaveHistory(Principal principal) {
+        return ResponseEntity.ok(leaveRequestService.getTeamLeaveHistory(principal.getName()));
+    }
 }

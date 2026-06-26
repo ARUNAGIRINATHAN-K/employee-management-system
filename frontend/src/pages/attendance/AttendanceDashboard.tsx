@@ -42,7 +42,7 @@ const getStatusColor = (status: string) => {
 };
 
 const AttendanceDashboard = () => {
-  const { isManager, isAdmin, isHR } = useAuth();
+  const { user, isManager, isAdmin, isHR } = useAuth();
   const showManagerTab = isManager() || isAdmin() || isHR();
   const showAdminTab = isAdmin() || isHR();
 
@@ -87,6 +87,13 @@ const AttendanceDashboard = () => {
 
   // ─── Fetch My Attendance (Tab 0) ────────────────────────────────────────────
   const fetchMyData = async () => {
+    if (!user?.employeeId) {
+      setTodayRecord(null);
+      setSummary(null);
+      setHistory([]);
+      return;
+    }
+
     try {
       setLoading(true);
       const todayData = await attendanceService.getTodayStatus();
@@ -146,7 +153,7 @@ const AttendanceDashboard = () => {
     } else if (activeTab === 2 && showAdminTab) {
       fetchPolicyData();
     }
-  }, [activeTab]);
+  }, [activeTab, user?.employeeId]);
 
   // Clock timer calculator
   useEffect(() => {
@@ -356,323 +363,335 @@ const AttendanceDashboard = () => {
             <>
               {/* TAB 0: MY ATTENDANCE */}
               {activeTab === 0 && (
-                <Grid container spacing={3.5}>
-                  {/* Punch Card Column */}
-                  <Grid size={{ xs: 12, md: 4.5 }}>
-                    <Card
-                      elevation={0}
-                      sx={{
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: '8px',
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        bgcolor: '#FAFBFD',
-                      }}
-                    >
-                      <CardContent sx={{ p: 3.5, textAlign: 'center' }}>
-                        <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700, fontFamily: 'Outfit, sans-serif', letterSpacing: '0.5px', textTransform: 'uppercase', mb: 2 }}>
-                          Daily Punch Clock
-                        </Typography>
-
-                        {/* Status Badge */}
-                        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-                          {todayRecord ? (
-                            (() => {
-                              const col = getStatusColor(todayRecord.status);
-                              return (
-                                <Chip
-                                  label={col.label}
-                                  sx={{
-                                    bgcolor: col.bg,
-                                    color: col.text,
-                                    fontWeight: 700,
-                                    fontSize: '0.8rem',
-                                    borderRadius: '6px',
-                                    fontFamily: 'Outfit, sans-serif',
-                                  }}
-                                />
-                              );
-                            })()
-                          ) : (
-                            <Chip
-                              label="Not Clocked In"
-                              sx={{
-                                bgcolor: '#F1F5F9',
-                                color: '#475569',
-                                fontWeight: 700,
-                                fontSize: '0.8rem',
-                                borderRadius: '6px',
-                                fontFamily: 'Outfit, sans-serif',
-                              }}
-                            />
-                          )}
-                        </Box>
-
-                        {/* Live Timer / Ticking Indicator */}
-                        <Box sx={{ mb: 4 }}>
-                          <Typography
-                            variant="h3"
-                            sx={{
-                              fontWeight: 800,
-                              fontFamily: 'Outfit, sans-serif',
-                              color: todayRecord && !todayRecord.clockOut ? 'primary.main' : 'text.primary',
-                              fontSize: '2.5rem',
-                              letterSpacing: '1px',
-                            }}
-                          >
-                            {timerVal}
+                !user?.employeeId ? (
+                  <Box sx={{ p: 4, textAlign: 'center', border: '1px solid', borderColor: 'divider', borderRadius: '8px', bgcolor: '#FAFBFD' }}>
+                    <AccessTimeRoundedIcon sx={{ fontSize: '3rem', color: 'text.disabled', mb: 2 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 800, fontFamily: 'Outfit, sans-serif', mb: 1 }}>
+                      No Employee Profile Linked
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'Inter, sans-serif', maxWidth: '480px', mx: 'auto' }}>
+                      This administrator/user account is not linked to an employee profile. Personal attendance logging and history logs are not applicable.
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Grid container spacing={3.5}>
+                    {/* Punch Card Column */}
+                    <Grid size={{ xs: 12, md: 4.5 }}>
+                      <Card
+                        elevation={0}
+                        sx={{
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          borderRadius: '8px',
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'center',
+                          bgcolor: '#FAFBFD',
+                        }}
+                      >
+                        <CardContent sx={{ p: 3.5, textAlign: 'center' }}>
+                          <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700, fontFamily: 'Outfit, sans-serif', letterSpacing: '0.5px', textTransform: 'uppercase', mb: 2 }}>
+                            Daily Punch Clock
                           </Typography>
-                          <Typography variant="caption" sx={{ color: 'text.disabled', fontFamily: 'Inter, sans-serif', fontSize: '0.75rem', mt: 0.5 }}>
-                            {todayRecord && !todayRecord.clockOut ? 'Active Time Card Session' : 'No Clock In Session'}
-                          </Typography>
-                        </Box>
 
-                        {/* Action Buttons */}
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: '280px', mx: 'auto' }}>
-                          {!todayRecord ? (
-                            <Button
-                              id="btn-clock-in"
-                              variant="contained"
-                              color="primary"
-                              size="large"
-                              onClick={handleClockIn}
-                              disabled={actionLoading}
-                              startIcon={<PlayArrowRoundedIcon />}
-                              sx={{
-                                textTransform: 'none',
-                                fontWeight: 700,
-                                fontFamily: 'Outfit, sans-serif',
-                                borderRadius: '6px',
-                                py: 1.2,
-                                boxShadow: 'none',
-                                '&:hover': { boxShadow: 'none' },
-                              }}
-                            >
-                              Punch In
-                            </Button>
-                          ) : !todayRecord.clockOut ? (
-                            <Button
-                              id="btn-clock-out"
-                              variant="contained"
-                              color="error"
-                              size="large"
-                              onClick={handleClockOut}
-                              disabled={actionLoading}
-                              startIcon={<StopRoundedIcon />}
-                              sx={{
-                                textTransform: 'none',
-                                fontWeight: 700,
-                                fontFamily: 'Outfit, sans-serif',
-                                borderRadius: '6px',
-                                py: 1.2,
-                                boxShadow: 'none',
-                                '&:hover': { boxShadow: 'none' },
-                              }}
-                            >
-                              Punch Out
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outlined"
-                              size="large"
-                              disabled
-                              sx={{
-                                textTransform: 'none',
-                                fontWeight: 700,
-                                fontFamily: 'Outfit, sans-serif',
-                                borderRadius: '6px',
-                                py: 1.2,
-                              }}
-                            >
-                              Completed Today
-                            </Button>
-                          )}
-                        </Box>
-
-                        {/* Clock In / Out times info list */}
-                        {todayRecord && (
-                          <Box sx={{ mt: 4, display: 'flex', flexDirection: 'column', gap: 1.5, textAlign: 'left', px: 2 }}>
-                            <Divider />
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'Inter, sans-serif' }}>
-                                Clocked In Time
-                              </Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', fontFamily: 'Outfit, sans-serif' }}>
-                                {new Date(todayRecord.clockIn!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </Typography>
-                            </Box>
-                            {todayRecord.clockOut && (
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'Inter, sans-serif' }}>
-                                  Clocked Out Time
-                                </Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', fontFamily: 'Outfit, sans-serif' }}>
-                                  {new Date(todayRecord.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </Typography>
-                              </Box>
-                            )}
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'Inter, sans-serif' }}>
-                                Today Work Mode
-                              </Typography>
+                          {/* Status Badge */}
+                          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                            {todayRecord ? (
+                              (() => {
+                                const col = getStatusColor(todayRecord.status);
+                                return (
+                                  <Chip
+                                    label={col.label}
+                                    sx={{
+                                      bgcolor: col.bg,
+                                      color: col.text,
+                                      fontWeight: 700,
+                                      fontSize: '0.8rem',
+                                      borderRadius: '6px',
+                                      fontFamily: 'Outfit, sans-serif',
+                                    }}
+                                  />
+                                );
+                              })()
+                            ) : (
                               <Chip
-                                label={todayRecord.workMode}
-                                size="small"
-                                variant="outlined"
-                                sx={{ height: 20, fontSize: '0.65rem', borderRadius: '4px', textTransform: 'uppercase' }}
+                                label="Not Clocked In"
+                                sx={{
+                                  bgcolor: '#F1F5F9',
+                                  color: '#475569',
+                                  fontWeight: 700,
+                                  fontSize: '0.8rem',
+                                  borderRadius: '6px',
+                                  fontFamily: 'Outfit, sans-serif',
+                                }}
                               />
-                            </Box>
+                            )}
                           </Box>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </Grid>
 
-                  {/* Summary & History Column */}
-                  <Grid size={{ xs: 12, md: 7.5 }}>
-                    {/* Month Summary Stats Grid */}
-                    {summary && (
-                      <Grid container spacing={2} sx={{ mb: 4 }}>
-                        {[
-                          { val: summary.presentDays, label: 'Days Present', color: 'success.main' },
-                          { val: summary.wfhDays, label: 'Remote/WFH', color: 'purple' },
-                          { val: summary.absentDays, label: 'Days Absent', color: 'error.main' },
-                          { val: summary.leaveDays, label: 'Leaves taken', color: 'primary.main' },
-                          { val: summary.lateDays, label: 'Late Entries', color: 'warning.main' },
-                        ].map((stat, i) => (
-                          <Grid size={{ xs: 4, sm: 2.4 }} key={i}>
-                            <Paper
-                              elevation={0}
+                          {/* Live Timer / Ticking Indicator */}
+                          <Box sx={{ mb: 4 }}>
+                            <Typography
+                              variant="h3"
                               sx={{
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                borderRadius: '8px',
-                                p: 1.5,
-                                textAlign: 'center',
+                                fontWeight: 800,
+                                fontFamily: 'Outfit, sans-serif',
+                                color: todayRecord && !todayRecord.clockOut ? 'primary.main' : 'text.primary',
+                                fontSize: '2.5rem',
+                                letterSpacing: '1px',
                               }}
                             >
-                              <Typography
-                                variant="h5"
+                              {timerVal}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.disabled', fontFamily: 'Inter, sans-serif', fontSize: '0.75rem', mt: 0.5 }}>
+                              {todayRecord && !todayRecord.clockOut ? 'Active Time Card Session' : 'No Clock In Session'}
+                            </Typography>
+                          </Box>
+
+                          {/* Action Buttons */}
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: '280px', mx: 'auto' }}>
+                            {!todayRecord ? (
+                              <Button
+                                id="btn-clock-in"
+                                variant="contained"
+                                color="primary"
+                                size="large"
+                                onClick={handleClockIn}
+                                disabled={actionLoading}
+                                startIcon={<PlayArrowRoundedIcon />}
                                 sx={{
-                                  fontWeight: 800,
+                                  textTransform: 'none',
+                                  fontWeight: 700,
                                   fontFamily: 'Outfit, sans-serif',
-                                  color: stat.color,
-                                  fontSize: '1.25rem',
+                                  borderRadius: '6px',
+                                  py: 1.2,
+                                  boxShadow: 'none',
+                                  '&:hover': { boxShadow: 'none' },
                                 }}
                               >
-                                {stat.val}
-                              </Typography>
-                              <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 500, fontFamily: 'Inter, sans-serif', display: 'block', mt: 0.25 }}>
-                                {stat.label}
-                              </Typography>
-                            </Paper>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    )}
-
-                    {/* History Section */}
-                    <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
-                      <CardContent sx={{ p: 3 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-                          <Typography variant="h6" sx={{ fontWeight: 800, fontFamily: 'Outfit, sans-serif', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <HistoryRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-                            Attendance Logs
-                          </Typography>
-
-                          {/* Range Filter */}
-                          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1.5, alignItems: 'center' }}>
-                            <TextField
-                              type="date"
-                              size="small"
-                              value={historyStart}
-                              onChange={(e) => setHistoryStart(e.target.value)}
-                              sx={{ '& .MuiInputBase-input': { fontSize: '0.8rem', py: 0.7 } }}
-                            />
-                            <Typography variant="caption" sx={{ color: 'text.disabled' }}>to</Typography>
-                            <TextField
-                              type="date"
-                              size="small"
-                              value={historyEnd}
-                              onChange={(e) => setHistoryEnd(e.target.value)}
-                              sx={{ '& .MuiInputBase-input': { fontSize: '0.8rem', py: 0.7 } }}
-                            />
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              onClick={fetchMyData}
-                              sx={{ minWidth: 40, py: 0.7, px: 1, textTransform: 'none', borderRadius: '6px' }}
-                            >
-                              <RefreshRoundedIcon fontSize="small" />
-                            </Button>
+                                Punch In
+                              </Button>
+                            ) : !todayRecord.clockOut ? (
+                              <Button
+                                id="btn-clock-out"
+                                variant="contained"
+                                color="error"
+                                size="large"
+                                onClick={handleClockOut}
+                                disabled={actionLoading}
+                                startIcon={<StopRoundedIcon />}
+                                sx={{
+                                  textTransform: 'none',
+                                  fontWeight: 700,
+                                  fontFamily: 'Outfit, sans-serif',
+                                  borderRadius: '6px',
+                                  py: 1.2,
+                                  boxShadow: 'none',
+                                  '&:hover': { boxShadow: 'none' },
+                                }}
+                              >
+                                Punch Out
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outlined"
+                                size="large"
+                                disabled
+                                sx={{
+                                  textTransform: 'none',
+                                  fontWeight: 700,
+                                  fontFamily: 'Outfit, sans-serif',
+                                  borderRadius: '6px',
+                                  py: 1.2,
+                                }}
+                              >
+                                Completed Today
+                              </Button>
+                            )}
                           </Box>
-                        </Box>
 
-                        {/* Logs Table */}
-                        <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '6px', overflow: 'hidden' }}>
-                          <Table size="small">
-                            <TableHead sx={{ bgcolor: '#F8FAFC' }}>
-                              <TableRow>
-                                <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Date</TableCell>
-                                <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Punch In</TableCell>
-                                <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Punch Out</TableCell>
-                                <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Status</TableCell>
-                                <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Overtime</TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {history.length === 0 ? (
-                                <TableRow>
-                                  <TableCell colSpan={5} align="center" sx={{ py: 4, color: 'text.secondary', fontFamily: 'Inter, sans-serif', fontSize: '0.85rem' }}>
-                                    No attendance records found for selected range.
-                                  </TableCell>
-                                </TableRow>
-                              ) : (
-                                history.map((row) => (
-                                  <TableRow key={row.id || row.date} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                                    <TableCell sx={{ fontFamily: 'Outfit, sans-serif', fontSize: '0.82rem', fontWeight: 600 }}>{row.date}</TableCell>
-                                    <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', color: 'text.secondary' }}>
-                                      {row.clockIn ? new Date(row.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
-                                    </TableCell>
-                                    <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', color: 'text.secondary' }}>
-                                      {row.clockOut ? new Date(row.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
-                                    </TableCell>
-                                    <TableCell sx={{ py: 1 }}>
-                                      {(() => {
-                                        const col = getStatusColor(row.status);
-                                        return (
-                                          <Chip
-                                            label={col.label}
-                                            size="small"
-                                            sx={{
-                                              bgcolor: col.bg,
-                                              color: col.text,
-                                              fontWeight: 700,
-                                              fontSize: '0.68rem',
-                                              height: 20,
-                                              borderRadius: '4px',
-                                              fontFamily: 'Outfit, sans-serif',
-                                            }}
-                                          />
-                                        );
-                                      })()}
-                                    </TableCell>
-                                    <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', color: row.overtimeMinutes > 0 ? 'success.main' : 'text.disabled', fontWeight: row.overtimeMinutes > 0 ? 600 : 400 }}>
-                                      {row.overtimeMinutes > 0 ? `${row.overtimeMinutes}m` : '—'}
-                                    </TableCell>
-                                  </TableRow>
-                                ))
+                          {/* Clock In / Out times info list */}
+                          {todayRecord && (
+                            <Box sx={{ mt: 4, display: 'flex', flexDirection: 'column', gap: 1.5, textAlign: 'left', px: 2 }}>
+                              <Divider />
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'Inter, sans-serif' }}>
+                                  Clocked In Time
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', fontFamily: 'Outfit, sans-serif' }}>
+                                  {new Date(todayRecord.clockIn!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </Typography>
+                              </Box>
+                              {todayRecord.clockOut && (
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'Inter, sans-serif' }}>
+                                    Clocked Out Time
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', fontFamily: 'Outfit, sans-serif' }}>
+                                    {new Date(todayRecord.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </Typography>
+                                </Box>
                               )}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                </Grid>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'Inter, sans-serif' }}>
+                                  Today Work Mode
+                                </Typography>
+                                <Chip
+                                  label={todayRecord.workMode}
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{ height: 20, fontSize: '0.65rem', borderRadius: '4px', textTransform: 'uppercase' }}
+                                />
+                              </Box>
+                            </Box>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Grid>
+
+                      {/* Summary & History Column */}
+                      <Grid size={{ xs: 12, md: 7.5 }}>
+                        {/* Month Summary Stats Grid */}
+                        {summary && (
+                          <Grid container spacing={2} sx={{ mb: 4 }}>
+                            {[
+                              { val: summary.presentDays, label: 'Days Present', color: 'success.main' },
+                              { val: summary.wfhDays, label: 'Remote/WFH', color: 'purple' },
+                              { val: summary.absentDays, label: 'Days Absent', color: 'error.main' },
+                              { val: summary.leaveDays, label: 'Leaves taken', color: 'primary.main' },
+                              { val: summary.lateDays, label: 'Late Entries', color: 'warning.main' },
+                            ].map((stat, i) => (
+                              <Grid size={{ xs: 4, sm: 2.4 }} key={i}>
+                                <Paper
+                                  elevation={0}
+                                  sx={{
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    borderRadius: '8px',
+                                    p: 1.5,
+                                    textAlign: 'center',
+                                  }}
+                                >
+                                  <Typography
+                                    variant="h5"
+                                    sx={{
+                                      fontWeight: 800,
+                                      fontFamily: 'Outfit, sans-serif',
+                                      color: stat.color,
+                                      fontSize: '1.25rem',
+                                    }}
+                                  >
+                                    {stat.val}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 500, fontFamily: 'Inter, sans-serif', display: 'block', mt: 0.25 }}>
+                                    {stat.label}
+                                  </Typography>
+                                </Paper>
+                              </Grid>
+                            ))}
+                          </Grid>
+                        )}
+
+                        {/* History Section */}
+                        <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
+                          <CardContent sx={{ p: 3 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+                              <Typography variant="h6" sx={{ fontWeight: 800, fontFamily: 'Outfit, sans-serif', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <HistoryRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                                Attendance Logs
+                              </Typography>
+
+                              {/* Range Filter */}
+                              <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1.5, alignItems: 'center' }}>
+                                <TextField
+                                  type="date"
+                                  size="small"
+                                  value={historyStart}
+                                  onChange={(e) => setHistoryStart(e.target.value)}
+                                  sx={{ '& .MuiInputBase-input': { fontSize: '0.8rem', py: 0.7 } }}
+                                />
+                                <Typography variant="caption" sx={{ color: 'text.disabled' }}>to</Typography>
+                                <TextField
+                                  type="date"
+                                  size="small"
+                                  value={historyEnd}
+                                  onChange={(e) => setHistoryEnd(e.target.value)}
+                                  sx={{ '& .MuiInputBase-input': { fontSize: '0.8rem', py: 0.7 } }}
+                                />
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  onClick={fetchMyData}
+                                  sx={{ minWidth: 40, py: 0.7, px: 1, textTransform: 'none', borderRadius: '6px' }}
+                                >
+                                  <RefreshRoundedIcon fontSize="small" />
+                                </Button>
+                              </Box>
+                            </Box>
+
+                            {/* Logs Table */}
+                            <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '6px', overflow: 'hidden' }}>
+                              <Table size="small">
+                                <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                                  <TableRow>
+                                    <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Date</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Punch In</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Punch Out</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Status</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Overtime</TableCell>
+                                  </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                  {history.length === 0 ? (
+                                    <TableRow>
+                                      <TableCell colSpan={5} align="center" sx={{ py: 4, color: 'text.secondary', fontFamily: 'Inter, sans-serif', fontSize: '0.85rem' }}>
+                                        No attendance records found for selected range.
+                                      </TableCell>
+                                    </TableRow>
+                                  ) : (
+                                    history.map((row) => (
+                                      <TableRow key={row.id || row.date} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                                        <TableCell sx={{ fontFamily: 'Outfit, sans-serif', fontSize: '0.82rem', fontWeight: 600 }}>{row.date}</TableCell>
+                                        <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', color: 'text.secondary' }}>
+                                          {row.clockIn ? new Date(row.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                                        </TableCell>
+                                        <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', color: 'text.secondary' }}>
+                                          {row.clockOut ? new Date(row.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                                        </TableCell>
+                                        <TableCell sx={{ py: 1 }}>
+                                          {(() => {
+                                            const col = getStatusColor(row.status);
+                                            return (
+                                              <Chip
+                                                label={col.label}
+                                                size="small"
+                                                sx={{
+                                                  bgcolor: col.bg,
+                                                  color: col.text,
+                                                  fontWeight: 700,
+                                                  fontSize: '0.68rem',
+                                                  height: 20,
+                                                  borderRadius: '4px',
+                                                  fontFamily: 'Outfit, sans-serif',
+                                                }}
+                                              />
+                                            );
+                                          })()}
+                                        </TableCell>
+                                        <TableCell sx={{ fontFamily: 'Inter, sans-serif', fontSize: '0.8rem', color: row.overtimeMinutes > 0 ? 'success.main' : 'text.disabled', fontWeight: row.overtimeMinutes > 0 ? 600 : 400 }}>
+                                          {row.overtimeMinutes > 0 ? `${row.overtimeMinutes}m` : '—'}
+                                        </TableCell>
+                                      </TableRow>
+                                    ))
+                                  )}
+                                </TableBody>
+                              </Table>
+                            </TableContainer>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+                  )
               )}
 
               {/* TAB 1: TEAM PRESENCE (MANAGER / PRIVILEGED ONLY) */}
@@ -853,7 +872,7 @@ const AttendanceDashboard = () => {
               {/* TAB 2: ATTENDANCE RULES & POLICIES (ADMIN ONLY) */}
               {activeTab === 2 && showAdminTab && (
                 <Grid container spacing={3.5}>
-                  <Grid size={{ xs: 12, md: 7 }}>
+                  <Grid size={12}>
                     <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
                       <CardContent sx={{ p: 3.5 }}>
                         <Typography variant="h6" sx={{ fontWeight: 800, fontFamily: 'Outfit, sans-serif', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
@@ -954,33 +973,6 @@ const AttendanceDashboard = () => {
                         </form>
                       </CardContent>
                     </Card>
-                  </Grid>
-
-                  <Grid size={{ xs: 12, md: 5 }}>
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: '8px',
-                        p: 3.5,
-                        bgcolor: '#FAFAFA',
-                        height: '100%',
-                      }}
-                    >
-                      <Typography variant="subtitle1" sx={{ fontWeight: 800, fontFamily: 'Outfit, sans-serif', mb: 2 }}>
-                        Policy Execution Rules
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2, fontFamily: 'Inter, sans-serif', lineHeight: 1.6 }}>
-                        These global variables configure automated attendance tracking behaviors.
-                      </Typography>
-                      <ul style={{ paddingLeft: '20px', margin: 0, fontFamily: 'Inter, sans-serif', fontSize: '0.85rem', color: '#475569', lineHeight: '1.75' }}>
-                        <li>Late arrivals are automatically tracked based on the shift start time.</li>
-                        <li>Overtime logs accumulate if employees clock out after the threshold grace period.</li>
-                        <li>Weekend statuses (Saturdays/Sundays) are set automatically unless manual clock-ins exist.</li>
-                        <li>Approved leave/WFH schedules automatically populate day logs.</li>
-                      </ul>
-                    </Paper>
                   </Grid>
                 </Grid>
               )}

@@ -16,4 +16,7 @@ export const leaveService = {
 
   rejectLeave: (id: number) =>
     api.put<LeaveRequest>(`/leaves/${id}/reject`).then((r) => r.data),
+
+  getTeamLeaveHistory: () =>
+    api.get<LeaveRequest[]>('/leaves/history').then((r) => r.data),
 };
