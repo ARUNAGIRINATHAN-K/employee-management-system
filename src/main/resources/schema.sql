@@ -148,5 +148,3 @@ ON DUPLICATE KEY UPDATE username = VALUES(username);
 INSERT INTO user_roles (user_id, role_id) VALUES
     (1, 1)
 ON DUPLICATE KEY UPDATE role_id = role_id;
-
-
