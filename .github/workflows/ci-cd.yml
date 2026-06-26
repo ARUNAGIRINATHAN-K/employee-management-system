@@ -62,16 +62,22 @@ jobs:
 
     steps:
       - name: Trigger Render Backend Deployment
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         # Execute only if the deploy hook secret is configured in the repository settings
-        if: "${{ secrets.RENDER_DEPLOY_HOOK_URL != '' }}"
+        if: env.RENDER_DEPLOY_HOOK_URL != ''
         run: |
           echo "Triggering automated deploy to Render..."
-          curl -f "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          curl -f "${{ env.RENDER_DEPLOY_HOOK_URL }}"
 
       - name: Deploy Frontend to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         # Execute only if the Vercel credentials secrets are configured
-        if: "${{ secrets.VERCEL_TOKEN != '' && secrets.VERCEL_ORG_ID != '' && secrets.VERCEL_PROJECT_ID != '' }}"
+        if: env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
         run: |
           echo "Deploying production build to Vercel..."
           npm install --global vercel
-          vercel deploy --prod --token "${{ secrets.VERCEL_TOKEN }}" --scope "${{ secrets.VERCEL_ORG_ID }}" --yes
+          vercel deploy --prod --token "${{ env.VERCEL_TOKEN }}" --scope "${{ env.VERCEL_ORG_ID }}" --yes
