@@ -136,3 +136,67 @@ INSERT INTO roles (name, description) VALUES
     ('ROLE_MANAGER',  'Manager access: view employees in own department, read-only departments'),
     ('ROLE_EMPLOYEE', 'Employee access: view and update own profile only')
 ON DUPLICATE KEY UPDATE description = VALUES(description);
+
+-- ============================================================
+-- 6. ATTENDANCE POLICIES
+-- Defines company shift times and rules. Single row by default.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS attendance_policies (
+    id                     BIGINT          NOT NULL AUTO_INCREMENT,
+    shift_start_time       TIME            NOT NULL,
+    shift_end_time         TIME            NOT NULL,
+    grace_period_minutes   INT             NOT NULL DEFAULT 15,
+    overtime_threshold_min INT             NOT NULL DEFAULT 60,
+    created_at             TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at             TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Seed default policy
+INSERT INTO attendance_policies (id, shift_start_time, shift_end_time, grace_period_minutes, overtime_threshold_min)
+VALUES (1, '09:00:00', '17:00:00', 15, 60)
+ON DUPLICATE KEY UPDATE id=id;
+
+-- ============================================================
+-- 7. ATTENDANCE LOGS
+-- Daily punch logs and final calculated statuses.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS attendance (
+    id                BIGINT          NOT NULL AUTO_INCREMENT,
+    employee_id       BIGINT          NOT NULL,
+    date              DATE            NOT NULL,
+    clock_in          DATETIME        NULL,
+    clock_out         DATETIME        NULL,
+    status            VARCHAR(20)     NOT NULL DEFAULT 'ABSENT',
+    work_mode         VARCHAR(20)     NOT NULL DEFAULT 'OFFICE',
+    overtime_minutes  INT             NOT NULL DEFAULT 0,
+    late_minutes      INT             NOT NULL DEFAULT 0,
+    created_at        TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_attendance_emp_date UNIQUE (employee_id, date),
+    CONSTRAINT fk_attendance_employee FOREIGN KEY (employee_id) REFERENCES employees (id) ON DELETE CASCADE,
+    INDEX idx_attendance_date (date),
+    INDEX idx_attendance_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- 8. LEAVE REQUESTS
+-- Leave / WFH request applications and manager workflow status.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS leave_requests (
+    id             BIGINT          NOT NULL AUTO_INCREMENT,
+    employee_id    BIGINT          NOT NULL,
+    leave_type     VARCHAR(50)     NOT NULL, -- CASUAL, SICK, WFH, PERMISSION
+    start_date     DATE            NOT NULL,
+    end_date       DATE            NOT NULL,
+    reason         VARCHAR(255)    NULL,
+    status         VARCHAR(20)     NOT NULL DEFAULT 'PENDING', -- PENDING, APPROVED, REJECTED
+    approved_by_id BIGINT          NULL,
+    created_at     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_leave_requests_employee FOREIGN KEY (employee_id) REFERENCES employees (id) ON DELETE CASCADE,
+    INDEX idx_leave_requests_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

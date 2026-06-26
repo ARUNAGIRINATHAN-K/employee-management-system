@@ -109,3 +109,56 @@ export interface CreateUserRequest {
   password: string;
   roles: string[];
 }
+
+// ─── Attendance & Leave Types ────────────────────────────────────────────────
+export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'ON_LEAVE' | 'WFH' | 'WEEKEND' | 'HOLIDAY';
+export type WorkMode = 'OFFICE' | 'REMOTE';
+export type LeaveType = 'CASUAL' | 'SICK' | 'WFH' | 'PERMISSION';
+export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface AttendancePolicy {
+  id?: number;
+  shiftStartTime: string; // "HH:mm:ss"
+  shiftEndTime: string;   // "HH:mm:ss"
+  gracePeriodMinutes: number;
+  overtimeThresholdMinutes: number;
+}
+
+export interface Attendance {
+  id?: number;
+  employeeId?: number;
+  employeeName?: string;
+  date: string;         // ISO date string yyyy-MM-dd
+  clockIn?: string;      // ISO datetime string
+  clockOut?: string;     // ISO datetime string
+  status: AttendanceStatus;
+  workMode: WorkMode;
+  overtimeMinutes: number;
+  lateMinutes: number;
+}
+
+export interface AttendanceSummary {
+  presentDays: number;
+  lateDays: number;
+  absentDays: number;
+  leaveDays: number;
+  wfhDays: number;
+  weekendDays: number;
+  holidayDays: number;
+  totalOvertimeMinutes: number;
+  totalLateMinutes: number;
+}
+
+
+export interface LeaveRequest {
+  id?: number;
+  employeeId?: number;
+  employeeName?: string;
+  leaveType: LeaveType;
+  startDate: string;    // ISO date string yyyy-MM-dd
+  endDate: string;      // ISO date string yyyy-MM-dd
+  reason: string;
+  status: LeaveStatus;
+  approvedByUsername?: string;
+  createdAt?: string;
+}

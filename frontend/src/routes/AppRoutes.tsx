@@ -20,6 +20,8 @@ import DepartmentDetails from '../pages/departments/DepartmentDetails';
 import Profile from '../pages/profile/Profile';
 import UserList from '../pages/users/UserList';
 import CreateUserForm from '../pages/users/CreateUserForm';
+import AttendanceDashboard from '../pages/attendance/AttendanceDashboard';
+import LeaveDashboard from '../pages/leaves/LeaveDashboard';
 
 /**
  * Root Route tree controller. Handles redirection mapping based on session auth & roles.
@@ -144,6 +146,24 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
               <CreateUserForm />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Attendance & Leave Management */}
+        <Route
+          path="/attendance"
+          element={
+            <ProtectedRoute allowedRoles={['ROLE_EMPLOYEE', 'ROLE_ADMIN', 'ROLE_HR', 'ROLE_MANAGER']}>
+              <AttendanceDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/leaves"
+          element={
+            <ProtectedRoute allowedRoles={['ROLE_EMPLOYEE', 'ROLE_ADMIN', 'ROLE_HR', 'ROLE_MANAGER']}>
+              <LeaveDashboard />
             </ProtectedRoute>
           }
         />

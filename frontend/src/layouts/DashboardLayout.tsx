@@ -12,6 +12,8 @@ import LogoutRoundedIcon         from '@mui/icons-material/LogoutRounded';
 import MenuRoundedIcon           from '@mui/icons-material/MenuRounded';
 import PersonRoundedIcon         from '@mui/icons-material/PersonRounded';
 import ManageAccountsRoundedIcon from '@mui/icons-material/ManageAccountsRounded';
+import AccessTimeRoundedIcon     from '@mui/icons-material/AccessTimeRounded';
+import EventNoteRoundedIcon      from '@mui/icons-material/EventNoteRounded';
 import { useAuth } from '../context/AuthContext';
 
 const DRAWER_WIDTH = 248;
@@ -41,6 +43,18 @@ const NAV_ITEMS: NavItem[] = [
     icon: <BusinessRoundedIcon fontSize="small" />,
     path: '/departments',
     roles: ['ROLE_ADMIN', 'ROLE_HR', 'ROLE_MANAGER'],
+  },
+  {
+    label: 'Attendance',
+    icon: <AccessTimeRoundedIcon fontSize="small" />,
+    path: '/attendance',
+    roles: ['ROLE_ADMIN', 'ROLE_HR', 'ROLE_MANAGER', 'ROLE_EMPLOYEE'],
+  },
+  {
+    label: 'Leaves',
+    icon: <EventNoteRoundedIcon fontSize="small" />,
+    path: '/leaves',
+    roles: ['ROLE_ADMIN', 'ROLE_HR', 'ROLE_MANAGER', 'ROLE_EMPLOYEE'],
   },
   {
     label: 'Users',
