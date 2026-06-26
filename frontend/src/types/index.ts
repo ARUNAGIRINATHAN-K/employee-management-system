@@ -86,3 +86,22 @@ export interface DashboardStats {
   averageSalary: number;
   employeesPerDepartment: Record<string, number>;
 }
+
+// ─── User Management Types ────────────────────────────────────────────────────
+export interface UserRecord {
+  id: number;
+  username: string;
+  email: string;
+  roles: string[];
+  linkedEmployeeName: string | null;
+  linkedEmployeeId: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateUserRequest {
+  username: string;
+  email: string;
+  password: string;
+  roles: string[];
+}

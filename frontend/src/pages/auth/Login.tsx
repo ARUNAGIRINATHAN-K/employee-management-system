@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box, Card, CardContent, TextField, Button, Typography,
-  Alert, InputAdornment, IconButton, CircularProgress, alpha,
+  Alert, InputAdornment, IconButton, CircularProgress, Divider,
 } from '@mui/material';
-import PersonRoundedIcon   from '@mui/icons-material/PersonRounded';
-import LockRoundedIcon     from '@mui/icons-material/LockRounded';
-import VisibilityRounded   from '@mui/icons-material/VisibilityRounded';
-import VisibilityOffRounded from '@mui/icons-material/VisibilityOffRounded';
+import PersonOutlineRoundedIcon   from '@mui/icons-material/PersonOutlineRounded';
+import LockOutlineRoundedIcon     from '@mui/icons-material/LockOutlineRounded';
+import VisibilityRounded          from '@mui/icons-material/VisibilityRounded';
+import VisibilityOffRounded       from '@mui/icons-material/VisibilityOffRounded';
 import { useAuth } from '../../context/AuthContext';
 import type { AxiosError } from 'axios';
 import type { ApiError } from '../../types';
@@ -29,7 +29,6 @@ const Login = () => {
     setLoading(true);
     try {
       await login({ username, password });
-      // Route based on role after login
       if (isAdmin() || isHR() || isManager()) {
         navigate('/dashboard', { replace: true });
       } else {
@@ -50,39 +49,46 @@ const Login = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: 'background.default',
-        background: 'linear-gradient(135deg, #0F0F1A 0%, #1A1A2E 50%, #0D0D1F 100%)',
+        bgcolor: '#F8F9FA',
         p: 2,
       }}
     >
-      {/* Decorative glow */}
-      <Box
+      <Card
+        elevation={0}
         sx={{
-          position: 'absolute', top: '20%', left: '30%',
-          width: 400, height: 400, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(108,99,255,0.15) 0%, transparent 70%)',
-          pointerEvents: 'none',
+          width: '100%',
+          maxWidth: 400,
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: '6px',
+          bgcolor: 'background.paper',
         }}
-      />
-      <Card sx={{ width: '100%', maxWidth: 420, position: 'relative', backdropFilter: 'blur(12px)' }}>
-        <CardContent sx={{ p: { xs: 3, sm: 5 } }}>
+      >
+        <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
           {/* Header */}
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Box
-              sx={{
-                display: 'inline-flex', p: 1.5, borderRadius: 3, mb: 2,
-                bgcolor: (t) => alpha(t.palette.primary.main, 0.16),
-              }}
+          <Box sx={{ mb: 3 }}>
+            <Typography
+              variant="h5"
+              sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', color: 'text.primary', letterSpacing: '-0.5px' }}
             >
-              <LockRoundedIcon color="primary" sx={{ fontSize: 32 }} />
-            </Box>
-            <Typography variant="h5" sx={{ fontWeight: 800 }}>Welcome back</Typography>
+              Sign in
+            </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Sign in to Employee Management System
+              Employee Management System
             </Typography>
           </Box>
 
-          {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>}
+          <Divider sx={{ mb: 3 }} />
+
+          {error && (
+            <Alert
+              severity="error"
+              variant="outlined"
+              sx={{ mb: 2.5, borderRadius: '6px', fontSize: '0.82rem' }}
+            >
+              {error}
+            </Alert>
+          )}
 
           <Box component="form" onSubmit={handleSubmit} noValidate>
             <TextField
@@ -96,7 +102,7 @@ const Login = () => {
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <PersonRoundedIcon fontSize="small" color="action" />
+                      <PersonOutlineRoundedIcon fontSize="small" sx={{ color: 'text.disabled' }} />
                     </InputAdornment>
                   ),
                 },
@@ -114,16 +120,20 @@ const Login = () => {
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <LockRoundedIcon fontSize="small" color="action" />
+                      <LockOutlineRoundedIcon fontSize="small" sx={{ color: 'text.disabled' }} />
                     </InputAdornment>
                   ),
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
                         onClick={() => setShowPwd((p) => !p)}
-                        edge="end" size="small"
+                        edge="end"
+                        size="small"
+                        sx={{ color: 'text.disabled' }}
                       >
-                        {showPwd ? <VisibilityOffRounded fontSize="small" /> : <VisibilityRounded fontSize="small" />}
+                        {showPwd
+                          ? <VisibilityOffRounded fontSize="small" />
+                          : <VisibilityRounded fontSize="small" />}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -137,9 +147,16 @@ const Login = () => {
               variant="contained"
               size="large"
               disabled={loading}
-              sx={{ py: 1.5, fontSize: '1rem' }}
+              disableElevation
+              sx={{
+                py: 1.4,
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                letterSpacing: '0.01em',
+                borderRadius: '6px',
+              }}
             >
-              {loading ? <CircularProgress size={22} color="inherit" /> : 'Sign In'}
+              {loading ? <CircularProgress size={20} color="inherit" /> : 'Sign In'}
             </Button>
           </Box>
         </CardContent>

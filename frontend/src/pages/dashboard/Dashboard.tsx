@@ -2,24 +2,20 @@ import { useEffect, useState } from 'react';
 import {
   Grid, Card, CardContent, Typography, Box, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, Paper, Button, Chip,
-  useTheme, alpha, LinearProgress
+  LinearProgress, Divider,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
-import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import AttachMoneyRoundedIcon from '@mui/icons-material/AttachMoneyRounded';
-import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
+import PeopleOutlineRoundedIcon    from '@mui/icons-material/PeopleOutlineRounded';
+import BusinessCenterOutlinedIcon  from '@mui/icons-material/BusinessCenterOutlined';
+import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
+import MonetizationOnOutlinedIcon  from '@mui/icons-material/MonetizationOnOutlined';
+import ArrowForwardRoundedIcon     from '@mui/icons-material/ArrowForwardRounded';
 import { dashboardService } from '../../services/dashboardService';
 import { employeeService } from '../../services/employeeService';
 import type { DashboardStats, Employee } from '../../types';
 import { LoadingSpinner } from '../../components/common/CommonComponents';
 
-/**
- * Premium Admin/HR/Manager Dashboard Page.
- */
 const Dashboard = () => {
-  const theme = useTheme();
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentEmployees, setRecentEmployees] = useState<Employee[]>([]);
@@ -32,7 +28,7 @@ const Dashboard = () => {
         setLoading(true);
         const [statsData, recentData] = await Promise.all([
           dashboardService.getStats(),
-          employeeService.getAll({ size: 5, sort: 'id,desc' })
+          employeeService.getAll({ size: 5, sort: 'id,desc' }),
         ]);
         setStats(statsData);
         setRecentEmployees(recentData.content);
@@ -48,9 +44,7 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
+  if (loading) return <LoadingSpinner />;
 
   if (error || !stats) {
     return (
@@ -66,94 +60,90 @@ const Dashboard = () => {
     {
       title: 'Total Employees',
       value: stats.totalEmployees,
-      icon: <PeopleRoundedIcon sx={{ fontSize: 28 }} />,
-      color: theme.palette.primary.main,
-      bg: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.16)} 0%, ${alpha(theme.palette.primary.main, 0.04)} 100%)`,
+      icon: <PeopleOutlineRoundedIcon sx={{ fontSize: 22 }} />,
     },
     {
       title: 'Active Employees',
       value: stats.activeEmployees,
-      icon: <CheckCircleRoundedIcon sx={{ fontSize: 28 }} />,
-      color: theme.palette.success.main,
-      bg: `linear-gradient(135deg, ${alpha(theme.palette.success.main, 0.16)} 0%, ${alpha(theme.palette.success.main, 0.04)} 100%)`,
+      icon: <CheckCircleOutlineRoundedIcon sx={{ fontSize: 22 }} />,
     },
     {
-      title: 'Total Departments',
+      title: 'Departments',
       value: stats.totalDepartments,
-      icon: <BusinessRoundedIcon sx={{ fontSize: 28 }} />,
-      color: theme.palette.info.main,
-      bg: `linear-gradient(135deg, ${alpha(theme.palette.info.main, 0.16)} 0%, ${alpha(theme.palette.info.main, 0.04)} 100%)`,
+      icon: <BusinessCenterOutlinedIcon sx={{ fontSize: 22 }} />,
     },
     {
-      title: 'Average Salary',
-      value: `$${stats.averageSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      icon: <AttachMoneyRoundedIcon sx={{ fontSize: 28 }} />,
-      color: theme.palette.secondary.main,
-      bg: `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.16)} 0%, ${alpha(theme.palette.secondary.main, 0.04)} 100%)`,
+      title: 'Avg. Salary',
+      value: `$${stats.averageSalary.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+      icon: <MonetizationOnOutlinedIcon sx={{ fontSize: 22 }} />,
     },
   ];
 
-  // Calculate max department count for visual scaling
   const deptCounts = Object.values(stats.employeesPerDepartment);
   const maxCount = deptCounts.length > 0 ? Math.max(...deptCounts) : 1;
 
   return (
-    <Box sx={{ animation: 'fadeIn 0.5s ease-out' }}>
+    <Box>
       {/* Page Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800 }} color="text.primary" gutterBottom>
-          Dashboard Overview
+        <Typography
+          variant="h5"
+          sx={{
+            fontWeight: 700,
+            fontFamily: 'Outfit, sans-serif',
+            letterSpacing: '-0.5px',
+            color: 'text.primary',
+          }}
+        >
+          Dashboard
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Real-time metrics and organization analytics
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          Organization overview and recent activity
         </Typography>
       </Box>
 
       {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
         {statCards.map((card, i) => (
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={i}>
             <Card
+              elevation={0}
               sx={{
-                background: card.bg,
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: 4,
-                boxShadow: '0 8px 32px 0 rgba(0,0,0,0.2)',
-                position: 'relative',
-                overflow: 'hidden',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: -20,
-                  right: -20,
-                  width: 100,
-                  height: 100,
-                  borderRadius: '50%',
-                  background: card.color,
-                  opacity: 0.08,
-                },
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: '6px',
+                bgcolor: 'background.paper',
               }}
             >
-              <CardContent sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Box
-                    sx={{
-                      p: 1.5,
-                      borderRadius: 3,
-                      bgcolor: alpha(card.color, 0.12),
-                      color: card.color,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {card.icon}
-                  </Box>
+              <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+                <Box
+                  sx={{
+                    display: 'inline-flex',
+                    p: 1,
+                    mb: 2,
+                    borderRadius: '6px',
+                    bgcolor: 'action.hover',
+                    color: 'text.secondary',
+                  }}
+                >
+                  {card.icon}
                 </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }} gutterBottom>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ fontSize: '0.78rem', mb: 0.5, fontWeight: 500 }}
+                >
                   {card.title}
                 </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800 }} color="text.primary">
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 700,
+                    fontFamily: 'Outfit, sans-serif',
+                    color: 'text.primary',
+                    letterSpacing: '-0.5px',
+                  }}
+                >
                   {card.value}
                 </Typography>
               </CardContent>
@@ -162,119 +152,191 @@ const Dashboard = () => {
         ))}
       </Grid>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={2}>
         {/* Department Breakdown */}
         <Grid size={{ xs: 12, md: 5 }}>
-          <Card sx={{ p: 3, height: '100%', borderRadius: 4, bgcolor: 'background.paper' }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
-              Active Employees Per Department
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
-              {Object.keys(stats.employeesPerDepartment).length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  No active employees mapped to departments yet.
-                </Typography>
-              ) : (
-                Object.entries(stats.employeesPerDepartment).map(([dept, count]) => {
-                  const percentage = (count / maxCount) * 100;
-                  return (
-                    <Box key={dept}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }} color="text.primary">
-                          {dept}
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }} color="primary.main">
-                          {count} {count === 1 ? 'Employee' : 'Employees'}
-                        </Typography>
+          <Card
+            elevation={0}
+            sx={{
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: '6px',
+              bgcolor: 'background.paper',
+              height: '100%',
+            }}
+          >
+            <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: 600, fontFamily: 'Outfit, sans-serif', mb: 0.5 }}
+              >
+                By Department
+              </Typography>
+              <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mb: 2.5 }}>
+                Active employees per department
+              </Typography>
+              <Divider sx={{ mb: 2.5 }} />
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                {Object.keys(stats.employeesPerDepartment).length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    No active employees mapped to departments yet.
+                  </Typography>
+                ) : (
+                  Object.entries(stats.employeesPerDepartment).map(([dept, count]) => {
+                    const percentage = (count / maxCount) * 100;
+                    return (
+                      <Box key={dept}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }} color="text.primary">
+                            {dept}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {count}
+                          </Typography>
+                        </Box>
+                        <LinearProgress
+                          variant="determinate"
+                          value={percentage}
+                          sx={{
+                            height: 4,
+                            borderRadius: 2,
+                            bgcolor: 'action.hover',
+                            '& .MuiLinearProgress-bar': {
+                              borderRadius: 2,
+                              bgcolor: 'text.primary',
+                            },
+                          }}
+                        />
                       </Box>
-                      <LinearProgress
-                        variant="determinate"
-                        value={percentage}
-                        sx={{
-                          height: 8,
-                          borderRadius: 4,
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
-                          '& .MuiLinearProgress-bar': {
-                            borderRadius: 4,
-                            background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
-                          },
-                        }}
-                      />
-                    </Box>
-                  );
-                })
-              )}
-            </Box>
+                    );
+                  })
+                )}
+              </Box>
+            </CardContent>
           </Card>
         </Grid>
 
         {/* Recent Employees Table */}
         <Grid size={{ xs: 12, md: 7 }}>
-          <Card sx={{ p: 3, height: '100%', borderRadius: 4, bgcolor: 'background.paper' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                Recent Hires
-              </Typography>
-              <Button
-                variant="outlined"
-                color="primary"
-                endIcon={<ArrowForwardRoundedIcon />}
-                onClick={() => navigate('/employees')}
-                size="small"
-              >
-                View All
-              </Button>
-            </Box>
-            <TableContainer component={Paper} elevation={0} sx={{ bgcolor: 'transparent' }}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Department</TableCell>
-                    <TableCell>Job Title</TableCell>
-                    <TableCell align="right">Status</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {recentEmployees.length === 0 ? (
+          <Card
+            elevation={0}
+            sx={{
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: '6px',
+              bgcolor: 'background.paper',
+              height: '100%',
+            }}
+          >
+            <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+                <Box>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{ fontWeight: 600, fontFamily: 'Outfit, sans-serif' }}
+                  >
+                    Recent Hires
+                  </Typography>
+                  <Typography variant="caption" color="text.disabled">
+                    Last 5 employees added
+                  </Typography>
+                </Box>
+                <Button
+                  variant="text"
+                  endIcon={<ArrowForwardRoundedIcon fontSize="small" />}
+                  onClick={() => navigate('/employees')}
+                  size="small"
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: '0.78rem',
+                    fontWeight: 500,
+                    '&:hover': { color: 'text.primary', bgcolor: 'transparent' },
+                  }}
+                >
+                  View all
+                </Button>
+              </Box>
+
+              <Divider sx={{ my: 2 }} />
+
+              <TableContainer component={Paper} elevation={0} sx={{ bgcolor: 'transparent' }}>
+                <Table size="small">
+                  <TableHead>
                     <TableRow>
-                      <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          No employees registered yet.
-                        </Typography>
-                      </TableCell>
+                      {['Name', 'Department', 'Job Title', 'Status'].map((h, i) => (
+                        <TableCell
+                          key={h}
+                          align={i === 3 ? 'right' : 'left'}
+                          sx={{
+                            fontSize: '0.72rem',
+                            fontWeight: 600,
+                            color: 'text.disabled',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            borderColor: 'divider',
+                            py: 1,
+                            px: 1,
+                          }}
+                        >
+                          {h}
+                        </TableCell>
+                      ))}
                     </TableRow>
-                  ) : (
-                    recentEmployees.map((emp) => (
-                      <TableRow key={emp.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                        <TableCell sx={{ py: 1.5 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {emp.firstName} {emp.lastName}
+                  </TableHead>
+                  <TableBody>
+                    {recentEmployees.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} align="center" sx={{ py: 4, borderBottom: 'none' }}>
+                          <Typography variant="body2" color="text.secondary">
+                            No employees registered yet.
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {emp.email}
-                          </Typography>
-                        </TableCell>
-                        <TableCell sx={{ py: 1.5 }}>
-                          {emp.departmentName || 'N/A'}
-                        </TableCell>
-                        <TableCell sx={{ py: 1.5 }}>
-                          {emp.jobTitle}
-                        </TableCell>
-                        <TableCell align="right" sx={{ py: 1.5 }}>
-                          <Chip
-                            label={emp.status}
-                            color={emp.status === 'ACTIVE' ? 'success' : 'default'}
-                            size="small"
-                            sx={{ height: 22, fontSize: '0.7rem' }}
-                          />
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                    ) : (
+                      recentEmployees.map((emp) => (
+                        <TableRow
+                          key={emp.id}
+                          sx={{
+                            '&:last-child td': { border: 0 },
+                            '&:hover': { bgcolor: 'action.hover' },
+                          }}
+                        >
+                          <TableCell sx={{ py: 1.25, px: 1, borderColor: 'divider' }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.82rem' }}>
+                              {emp.firstName} {emp.lastName}
+                            </Typography>
+                            <Typography variant="caption" color="text.disabled">
+                              {emp.email}
+                            </Typography>
+                          </TableCell>
+                          <TableCell sx={{ py: 1.25, px: 1, fontSize: '0.82rem', borderColor: 'divider', color: 'text.secondary' }}>
+                            {emp.departmentName || '—'}
+                          </TableCell>
+                          <TableCell sx={{ py: 1.25, px: 1, fontSize: '0.82rem', borderColor: 'divider', color: 'text.secondary' }}>
+                            {emp.jobTitle}
+                          </TableCell>
+                          <TableCell align="right" sx={{ py: 1.25, px: 1, borderColor: 'divider' }}>
+                            <Chip
+                              label={emp.status}
+                              size="small"
+                              variant="outlined"
+                              sx={{
+                                height: 20,
+                                fontSize: '0.68rem',
+                                borderRadius: '4px',
+                                borderColor: emp.status === 'ACTIVE' ? 'success.main' : 'divider',
+                                color: emp.status === 'ACTIVE' ? 'success.dark' : 'text.disabled',
+                                '& .MuiChip-label': { px: 0.75 },
+                              }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </CardContent>
           </Card>
         </Grid>
       </Grid>

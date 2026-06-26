@@ -1,5 +1,6 @@
 package com.ems.employee_management_system.service.impl;
 
+import com.ems.employee_management_system.dto.AssignAccountRequest;
 import com.ems.employee_management_system.dto.EmployeeDTO;
 import com.ems.employee_management_system.exception.DuplicateResourceException;
 import com.ems.employee_management_system.exception.ResourceNotFoundException;
@@ -7,14 +8,17 @@ import com.ems.employee_management_system.mapper.EmployeeMapper;
 import com.ems.employee_management_system.model.Department;
 import com.ems.employee_management_system.model.Employee;
 import com.ems.employee_management_system.model.EmployeeStatus;
+import com.ems.employee_management_system.model.Role;
 import com.ems.employee_management_system.model.User;
 import com.ems.employee_management_system.repository.DepartmentRepository;
 import com.ems.employee_management_system.repository.EmployeeRepository;
+import com.ems.employee_management_system.repository.RoleRepository;
 import com.ems.employee_management_system.repository.UserRepository;
 import com.ems.employee_management_system.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +33,9 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final EmployeeMapper employeeMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public Page<EmployeeDTO> getAllEmployees(String search, Long departmentId, String status, Pageable pageable) {
@@ -137,5 +143,57 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
         employeeRepository.delete(employee);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // ASSIGN LOGIN ACCOUNT
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public EmployeeDTO assignAccount(Long employeeId, AssignAccountRequest request) {
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + employeeId));
+
+        // Guard: already has a linked account
+        if (employee.getUser() != null) {
+            throw new DuplicateResourceException(
+                    "Employee already has a linked login account: '" + employee.getUser().getUsername() + "'");
+        }
+
+        // Guard: username uniqueness
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new DuplicateResourceException(
+                    "Username '" + request.getUsername() + "' is already taken");
+        }
+
+        // Guard: email uniqueness in users table (use employee email)
+        if (userRepository.existsByEmail(employee.getEmail())) {
+            throw new DuplicateResourceException(
+                    "A login account with email '" + employee.getEmail() + "' already exists");
+        }
+
+        // Resolve role
+        String roleName = request.getRole().startsWith("ROLE_")
+                ? request.getRole()
+                : "ROLE_" + request.getRole().toUpperCase();
+        Role role = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + roleName));
+
+        // Create User entity
+        User user = User.builder()
+                .username(request.getUsername())
+                .email(employee.getEmail())   // use employee's registered email
+                .password(passwordEncoder.encode(request.getPassword()))
+                .roles(new java.util.HashSet<>(java.util.Set.of(role)))
+                .build();
+
+        User savedUser = userRepository.save(user);
+
+        // Link to employee
+        employee.setUser(savedUser);
+        Employee updatedEmployee = employeeRepository.save(employee);
+
+        return employeeMapper.toDTO(updatedEmployee);
     }
 }

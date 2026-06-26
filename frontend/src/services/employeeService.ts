@@ -28,4 +28,9 @@ export const employeeService = {
 
   delete: (id: number) =>
     api.delete(`/employees/${id}`).then((r) => r.data),
+
+  /** POST /employees/{id}/account — create + link a login account to this employee */
+  assignAccount: (id: number, data: { username: string; password: string; role: string }) =>
+    api.post<Employee>(`/employees/${id}/account`, data).then((r) => r.data),
 };
+

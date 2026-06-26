@@ -18,6 +18,8 @@ import DepartmentList from '../pages/departments/DepartmentList';
 import DepartmentForm from '../pages/departments/DepartmentForm';
 import DepartmentDetails from '../pages/departments/DepartmentDetails';
 import Profile from '../pages/profile/Profile';
+import UserList from '../pages/users/UserList';
+import CreateUserForm from '../pages/users/CreateUserForm';
 
 /**
  * Root Route tree controller. Handles redirection mapping based on session auth & roles.
@@ -124,6 +126,24 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
               <DepartmentForm />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* User Management — ADMIN only */}
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
+              <UserList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/users/new"
+          element={
+            <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
+              <CreateUserForm />
             </ProtectedRoute>
           }
         />
