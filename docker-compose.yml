@@ -8,7 +8,8 @@ services:
     environment:
       MYSQL_DATABASE: ems_db
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
-      MYSQL_USER: ${MYSQL_USER:-ems_user}
+      # Set regular user to ems_db_user to avoid conflicts with 'root' configuration
+      MYSQL_USER: ems_db_user
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-ems_password}
     volumes:
       - db_data:/var/lib/mysql
@@ -32,8 +33,9 @@ services:
       - "8080:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/ems_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-ems_user}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-ems_password}
+      # Connect locally as root using the root password
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
       SPRING_SQL_INIT_MODE: never
       JWT_SECRET: ${JWT_SECRET:-9a67471b79e8c459f0f9b6fb3e78e24c7f078a6ff68a2d12e616c68a412803b9b4f2cde9ebc6c09a80b06b0d3886f32e9a59b661d40292ff2435e5d1ee55df62}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
