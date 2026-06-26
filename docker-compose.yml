@@ -1,13 +1,64 @@
+version: '3.8'
+
 services:
-  employee-management:
+  db:
+    image: mysql:8.0
+    container_name: ems-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: ems_db
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_USER: ${MYSQL_USER:-ems_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-ems_password}
+    volumes:
+      - db_data:/var/lib/mysql
+      # Automatically seed database schema and lookup roles on first boot
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/1-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ems-network
+
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
-    image: employee-management:latest
+    container_name: ems-backend
+    restart: always
     ports:
       - "8080:8080"
     environment:
-      SERVER_PORT: 8080
-      APP_UPLOAD_DIR: /app/uploads
-    volumes:
-      - ./uploads:/app/uploads
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/ems_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-ems_user}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-ems_password}
+      SPRING_SQL_INIT_MODE: never
+      JWT_SECRET: ${JWT_SECRET:-9a67471b79e8c459f0f9b6fb3e78e24c7f078a6ff68a2d12e616c68a412803b9b4f2cde9ebc6c09a80b06b0d3886f32e9a59b661d40292ff2435e5d1ee55df62}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - ems-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ems-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - ems-network
+
+volumes:
+  db_data:
+
+networks:
+  ems-network:
+    driver: bridge

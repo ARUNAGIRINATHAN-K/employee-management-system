@@ -32,23 +32,8 @@ build/
 ### VS Code ###
 .vscode/
 
-# Local development artifacts
-uploads/
-test.log
-implementation_plan.md
-
-# Java / Maven generated files
-*.class
-*.jar
-*.war
-*.ear
-*.log
-*.tmp
-*.out
-*.cache
-*.bak
-*~
-*.swp
-*.swo
-.DS_Store
-Thumbs.db
+### Environment Variables ###
+.env
+.env.local
+.env.*
+*.env

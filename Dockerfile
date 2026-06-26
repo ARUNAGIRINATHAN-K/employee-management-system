@@ -1,30 +1,28 @@
-FROM eclipse-temurin:17-jdk-jammy AS build
-
-WORKDIR /workspace
-
-COPY mvnw mvnw.cmd pom.xml ./
-COPY .mvn .mvn
-RUN chmod +x mvnw
-
-COPY src src
-
-RUN ./mvnw -DskipTests package
-
-FROM eclipse-temurin:17-jre-jammy AS runtime
-
+# ─── Build Stage ─────────────────────────────────────────────────────────────
+FROM maven:3.9.6-eclipse-temurin-21-alpine AS builder
 WORKDIR /app
 
-RUN useradd --create-home --shell /usr/sbin/nologin appuser \
-    && mkdir -p /app/uploads \
-    && chown -R appuser:appuser /app
+# Cache Maven dependencies by copying pom.xml first
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
 
-COPY --from=build /workspace/target/*.jar /app/app.jar
+# Copy sources and package the application
+COPY src ./src
+RUN mvn package -DskipTests
 
-ENV SERVER_PORT=8080
-ENV APP_UPLOAD_DIR=/app/uploads
+# ─── Run Stage ───────────────────────────────────────────────────────────────
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
 
+# Create a non-root system user and group for security
+RUN addgroup -S ems && adduser -S ems -G ems
+USER ems
+
+# Copy the packaged jar from the builder stage
+COPY --from=builder /app/target/employee-management-system-0.0.1-SNAPSHOT.jar app.jar
+
+# Expose Spring Boot default port
 EXPOSE 8080
 
-USER appuser
-
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+# Run the Spring Boot application
+ENTRYPOINT ["java", "-jar", "app.jar"]
