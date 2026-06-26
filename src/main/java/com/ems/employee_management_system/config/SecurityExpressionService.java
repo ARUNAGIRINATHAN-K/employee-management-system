@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import java.util.Optional;
+
 
 /**
  * Custom bean providing reusable Spring Security SpEL expressions for fine-grained
@@ -35,24 +37,47 @@ public class SecurityExpressionService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null) return false;
 
-        boolean isPrivileged = auth.getAuthorities().stream()
+        boolean isAdminOrHR = auth.getAuthorities().stream()
                 .anyMatch(a -> {
                     String r = a.getAuthority();
                     return r.equals(RoleConstants.ADMIN) ||
-                           r.equals(RoleConstants.HR)    ||
-                           r.equals(RoleConstants.MANAGER);
+                           r.equals(RoleConstants.HR);
                 });
 
-        if (isPrivileged) return true;
+        if (isAdminOrHR) return true;
 
-        // Check if this employee record belongs to the authenticated user
+        boolean isManager = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals(RoleConstants.MANAGER));
+
         String username = auth.getName();
-        return userRepository.findByUsername(username)
-                .flatMap(user -> employeeRepository.findByUserId(user.getId()))
+        Optional<com.ems.employee_management_system.model.User> currentUserOpt = userRepository.findByUsername(username);
+        if (!currentUserOpt.isPresent()) return false;
+
+        Long currentUserId = currentUserOpt.get().getId();
+        Optional<Employee> currentEmpOpt = employeeRepository.findByUserId(currentUserId);
+
+        if (isManager && currentEmpOpt.isPresent()) {
+            Employee managerEmp = currentEmpOpt.get();
+            if (managerEmp.getDepartment() != null) {
+                Long managerDeptId = managerEmp.getDepartment().getId();
+                // Resolve target employee
+                Optional<Employee> targetEmpOpt = employeeRepository.findById(employeeId);
+                if (targetEmpOpt.isPresent()) {
+                    Employee targetEmp = targetEmpOpt.get();
+                    if (targetEmp.getDepartment() != null && targetEmp.getDepartment().getId().equals(managerDeptId)) {
+                        return true; // Manager is in the same department
+                    }
+                }
+            }
+        }
+
+        // Fallback: check if this employee record belongs to the authenticated user (for ROLE_EMPLOYEE or self-access)
+        return currentEmpOpt
                 .map(Employee::getId)
                 .map(ownId -> ownId.equals(employeeId))
                 .orElse(false);
     }
+
 
     /**
      * Returns {@code true} when the currently authenticated user is accessing

@@ -21,6 +21,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * Service implementation for Employee operations.
@@ -39,6 +41,22 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public Page<EmployeeDTO> getAllEmployees(String search, Long departmentId, String status, Pageable pageable) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()) {
+            boolean isOnlyManager = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER")) &&
+                    auth.getAuthorities().stream()
+                    .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_HR"));
+            if (isOnlyManager) {
+                Long managerDeptId = userRepository.findByUsername(auth.getName())
+                        .flatMap(user -> employeeRepository.findByUserId(user.getId()))
+                        .map(Employee::getDepartment)
+                        .map(Department::getId)
+                        .orElse(-1L);
+                departmentId = managerDeptId;
+            }
+        }
+
         EmployeeStatus employeeStatus = null;
         if (status != null && !status.trim().isEmpty()) {
             try {
@@ -50,6 +68,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         Page<Employee> employees = employeeRepository.searchEmployees(search, departmentId, employeeStatus, pageable);
         return employees.map(employeeMapper::toDTO);
     }
+
 
     @Override
     public EmployeeDTO getEmployeeById(Long id) {

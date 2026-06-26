@@ -8,6 +8,8 @@ import com.ems.employee_management_system.model.Department;
 import com.ems.employee_management_system.model.Employee;
 import com.ems.employee_management_system.model.EmployeeStatus;
 import com.ems.employee_management_system.repository.DepartmentRepository;
+import com.ems.employee_management_system.repository.EmployeeRepository;
+import com.ems.employee_management_system.repository.UserRepository;
 import com.ems.employee_management_system.service.impl.DepartmentServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,12 @@ class DepartmentServiceImplTest {
     @Mock
     private DepartmentRepository departmentRepository;
 
+    @Mock
+    private EmployeeRepository employeeRepository;
+
+    @Mock
+    private UserRepository userRepository;
+
     private final DepartmentMapper departmentMapper = new DepartmentMapper();
 
     private DepartmentServiceImpl departmentService;
@@ -39,8 +47,11 @@ class DepartmentServiceImplTest {
     void setUp() {
         departmentService = new DepartmentServiceImpl(
                 departmentRepository,
+                employeeRepository,
+                userRepository,
                 departmentMapper
         );
+
 
         department = new Department();
         department.setId(1L);

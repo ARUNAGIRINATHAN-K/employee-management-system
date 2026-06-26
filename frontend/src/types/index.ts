@@ -85,7 +85,11 @@ export interface DashboardStats {
   totalDepartments: number;
   averageSalary: number;
   employeesPerDepartment: Record<string, number>;
+  departmentName?: string;
+  departmentId?: number;
+  teamDistribution?: Record<string, number>;
 }
+
 
 // ─── User Management Types ────────────────────────────────────────────────────
 export interface UserRecord {

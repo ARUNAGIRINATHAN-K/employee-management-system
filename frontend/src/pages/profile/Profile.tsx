@@ -160,7 +160,7 @@ const Profile = () => {
                   <Box>
                     <Typography variant="caption" color="text.secondary">Salary (Annual)</Typography>
                     <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                      ${employee.salary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ₹{employee.salary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Typography>
                   </Box>
                 </Box>

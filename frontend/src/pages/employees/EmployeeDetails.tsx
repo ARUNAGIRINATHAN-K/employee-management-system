@@ -354,7 +354,7 @@ const EmployeeDetails = () => {
                     <Box>
                       <Typography variant="caption" color="text.disabled">Salary (Annual)</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        ${employee.salary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ₹{employee.salary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </Typography>
                     </Box>
                   </Box>

@@ -20,4 +20,10 @@ public class DashboardStatsDTO {
     private long totalDepartments;
     private BigDecimal averageSalary;
     private Map<String, Long> employeesPerDepartment;
+    
+    // Manager-specific department-scoped fields
+    private String departmentName;
+    private Long departmentId;
+    private Map<String, Long> teamDistribution;
 }
+

@@ -277,7 +277,7 @@ const EmployeeList = () => {
                   <TableCell>{emp.jobTitle}</TableCell>
                   <TableCell>{emp.departmentName || 'N/A'}</TableCell>
                   <TableCell>
-                    ${emp.salary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ₹{emp.salary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </TableCell>
                   <TableCell>{emp.hireDate}</TableCell>
                   <TableCell>

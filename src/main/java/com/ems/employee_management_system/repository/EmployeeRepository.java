@@ -60,4 +60,29 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
            "WHERE e.status = 'ACTIVE' AND e.department IS NOT NULL " +
            "GROUP BY e.department.name")
     List<Object[]> getActiveEmployeeCountByDepartment();
+
+    /**
+     * Derived query to count employees by department.
+     */
+    long countByDepartmentId(Long departmentId);
+
+    /**
+     * Derived query to count employees by department and status.
+     */
+    long countByDepartmentIdAndStatus(Long departmentId, EmployeeStatus status);
+
+    /**
+     * Custom analytical query to compute the average salary of active employees in a specific department.
+     */
+    @Query("SELECT AVG(e.salary) FROM Employee e WHERE e.status = 'ACTIVE' AND e.department.id = :departmentId")
+    BigDecimal getAverageSalaryOfActiveEmployeesByDepartment(@Param("departmentId") Long departmentId);
+
+    /**
+     * Custom aggregation query to get active employee count grouped by job title for a department.
+     */
+    @Query("SELECT e.jobTitle, COUNT(e) FROM Employee e " +
+           "WHERE e.status = 'ACTIVE' AND e.department.id = :departmentId " +
+           "GROUP BY e.jobTitle")
+    List<Object[]> getActiveEmployeeCountByJobTitleForDepartment(@Param("departmentId") Long departmentId);
 }
+
