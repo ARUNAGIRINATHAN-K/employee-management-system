@@ -2,14 +2,17 @@ package com.ems.employee_management_system.config;
 
 import com.ems.employee_management_system.model.Role;
 import com.ems.employee_management_system.model.User;
+import com.ems.employee_management_system.model.AttendancePolicy;
 import com.ems.employee_management_system.repository.RoleRepository;
 import com.ems.employee_management_system.repository.UserRepository;
+import com.ems.employee_management_system.repository.AttendancePolicyRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -24,6 +27,7 @@ public class DatabaseSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final AttendancePolicyRepository policyRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -56,6 +60,21 @@ public class DatabaseSeeder implements CommandLineRunner {
             log.info("Default admin user successfully seeded.");
         } else {
             log.info("Admin user already exists. Skipping seeding.");
+        }
+
+        // 3. Seed Default Attendance Policy
+        if (policyRepository.count() == 0) {
+            log.info("Seeding default attendance policy...");
+            AttendancePolicy policy = AttendancePolicy.builder()
+                    .shiftStartTime(LocalTime.of(9, 0))
+                    .shiftEndTime(LocalTime.of(17, 0))
+                    .gracePeriodMinutes(15)
+                    .overtimeThresholdMinutes(60)
+                    .build();
+            policyRepository.save(policy);
+            log.info("Default attendance policy successfully seeded.");
+        } else {
+            log.info("Default attendance policy already exists. Skipping seeding.");
         }
     }
 

@@ -375,7 +375,7 @@ const AttendanceDashboard = () => {
                   </Box>
                 ) : (
                   <Grid container spacing={3.5}>
-                    {/* Punch Card Column */}
+                    {/* Check In/Out Column */}
                     <Grid size={{ xs: 12, md: 4.5 }}>
                       <Card
                         elevation={0}
@@ -392,7 +392,7 @@ const AttendanceDashboard = () => {
                       >
                         <CardContent sx={{ p: 3.5, textAlign: 'center' }}>
                           <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700, fontFamily: 'Outfit, sans-serif', letterSpacing: '0.5px', textTransform: 'uppercase', mb: 2 }}>
-                            Daily Punch Clock
+                            Daily Attendance
                           </Typography>
 
                           {/* Status Badge */}
@@ -416,7 +416,7 @@ const AttendanceDashboard = () => {
                               })()
                             ) : (
                               <Chip
-                                label="Not Clocked In"
+                                label="Not Checked In"
                                 sx={{
                                   bgcolor: '#F1F5F9',
                                   color: '#475569',
@@ -444,7 +444,7 @@ const AttendanceDashboard = () => {
                               {timerVal}
                             </Typography>
                             <Typography variant="caption" sx={{ color: 'text.disabled', fontFamily: 'Inter, sans-serif', fontSize: '0.75rem', mt: 0.5 }}>
-                              {todayRecord && !todayRecord.clockOut ? 'Active Time Card Session' : 'No Clock In Session'}
+                              {todayRecord && !todayRecord.clockOut ? 'Working Hours (Active Session)' : 'Working Hours'}
                             </Typography>
                           </Box>
 
@@ -469,7 +469,7 @@ const AttendanceDashboard = () => {
                                   '&:hover': { boxShadow: 'none' },
                                 }}
                               >
-                                Punch In
+                                Check In
                               </Button>
                             ) : !todayRecord.clockOut ? (
                               <Button
@@ -490,7 +490,7 @@ const AttendanceDashboard = () => {
                                   '&:hover': { boxShadow: 'none' },
                                 }}
                               >
-                                Punch Out
+                                Check Out
                               </Button>
                             ) : (
                               <Button
@@ -516,7 +516,7 @@ const AttendanceDashboard = () => {
                               <Divider />
                               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'Inter, sans-serif' }}>
-                                  Clocked In Time
+                                  Check In Time
                                 </Typography>
                                 <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', fontFamily: 'Outfit, sans-serif' }}>
                                   {new Date(todayRecord.clockIn!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -525,7 +525,7 @@ const AttendanceDashboard = () => {
                               {todayRecord.clockOut && (
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                   <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'Inter, sans-serif' }}>
-                                    Clocked Out Time
+                                    Check Out Time
                                   </Typography>
                                   <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', fontFamily: 'Outfit, sans-serif' }}>
                                     {new Date(todayRecord.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -635,8 +635,8 @@ const AttendanceDashboard = () => {
                                 <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                                   <TableRow>
                                     <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Date</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Punch In</TableCell>
-                                    <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Punch Out</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Check In</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Check Out</TableCell>
                                     <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Status</TableCell>
                                     <TableCell sx={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', fontSize: '0.8rem', py: 1.2 }}>Overtime</TableCell>
                                   </TableRow>
@@ -927,7 +927,7 @@ const AttendanceDashboard = () => {
                                   slotProps={{
                                     input: { inputProps: { min: 0 } }
                                   }}
-                                  helperText="Grace delay allowed before punches are classified as LATE."
+                                  helperText="Grace delay allowed before check-ins are classified as LATE."
                                   sx={{ '& label': { fontFamily: 'Outfit, sans-serif' }, '& input': { fontFamily: 'Inter, sans-serif' } }}
                                 />
                               </Grid>
